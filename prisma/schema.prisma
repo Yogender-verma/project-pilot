@@ -7,10 +7,10 @@ generator client {
 }
 
 model User {
-  id                  String   @id @default(cuid())
-  clerkId             String   @unique
+  id                  String         @id @default(cuid())
+  clerkId             String         @unique
   fullName            String?
-  email               String   @unique
+  email               String         @unique
   imageUrl            String?
   dreamRole           String?
   skills              String[]
@@ -18,7 +18,46 @@ model User {
   linkedinUrl         String?
   resumeUrl           String?
   dailyStudyTime      Int?
-  onboardingCompleted Boolean  @default(false)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  onboardingCompleted Boolean        @default(false)
+  projects            Project[]
+  notifications       Notification[]
+  activities          Activity[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+model Project {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      String     @default("Planned")
+  progress    Int        @default(0)
+  tags        String[]
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities  Activity[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  link      String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  type        String
+  description String
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
 }
