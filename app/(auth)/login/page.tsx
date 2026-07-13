@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as zod from 'zod';
 import { motion } from 'framer-motion';
-import { Compass, Mail, Lock, ArrowRight, ShieldCheck, Compass as CompassIcon } from 'lucide-react';
+import { Compass, Mail, Lock, ArrowRight, ShieldCheck, Compass as CompassIcon, Eye, EyeOff } from 'lucide-react';
 import { Github, Chrome } from '@/components/ui/BrandIcons';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/Button';
@@ -27,6 +27,7 @@ export default function LoginPage() {
   const { login } = useAppStore();
   const { signIn, isLoaded: isSignInLoaded, setActive } = useSignIn() as any;
   const [isLoading, setIsLoading] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const handleGoogleSignIn = async () => {
     if (!isSignInLoaded) return;
@@ -205,11 +206,25 @@ export default function LoginPage() {
                   </div>
                   <Input
                     {...register('password')}
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     label="Password"
                     placeholder="••••••••"
                     error={errors.password?.message}
                     leftIcon={<Lock className="w-4 h-4" />}
+                    rightElement={
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-slate-400 hover:text-slate-200 focus:outline-none transition-colors p-1"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    }
                   />
                   <div className="text-right mt-1">
                     <a href="#" className="text-xs text-indigo-400 hover:underline">Forgot password?</a>

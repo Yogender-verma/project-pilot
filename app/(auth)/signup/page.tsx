@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as zod from 'zod';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User as UserIcon, ArrowRight, Compass as CompassIcon, Sparkles, CheckCircle } from 'lucide-react';
+import { Mail, Lock, User as UserIcon, ArrowRight, Compass as CompassIcon, Sparkles, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { Github, Chrome } from '@/components/ui/BrandIcons';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/Button';
@@ -29,6 +29,7 @@ export default function SignupPage() {
   const { signup } = useAppStore();
   const { signUp, isLoaded: isSignUpLoaded, setActive } = useSignUp() as any;
   const [isLoading, setIsLoading] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
 
   // Verification state machine
   const [verifying, setVerifying] = React.useState(false);
@@ -309,11 +310,25 @@ export default function SignupPage() {
                 
                 <Input
                   {...register('password')}
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   label="Password"
                   placeholder="••••••••"
                   error={errors.password?.message}
                   leftIcon={<Lock className="w-4.5 h-4.5" />}
+                  rightElement={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-slate-400 hover:text-slate-200 focus:outline-none transition-colors p-1"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  }
                 />
 
                 <Button
