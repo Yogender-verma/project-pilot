@@ -13,18 +13,20 @@ import {
 import { generateAdaptiveDashboard } from '@/lib/adaptiveEngine';
 import { generateSmartReply } from '@/lib/mockAiEngine';
 
+// Neutral placeholder used before the authenticated user profile is hydrated from the DB.
+// This is intentionally empty — real data flows in via syncUserProfile() on mount.
 const DEFAULT_USER: User = {
-  id: 'user-default',
-  name: 'yogender verma',
-  email: 'yogendarverma0268@gmail.com',
-  avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80',
-  careerGoal: 'AI Engineer',
-  skills: ['React', 'Next.js', 'Tailwind CSS', 'TypeScript', 'Node.js', 'Express', 'SQL']
+  id: '',
+  name: '',
+  email: '',
+  avatarUrl: '',
+  careerGoal: 'fullstack',
+  skills: []
 };
 
 const initialAdaptive = generateAdaptiveDashboard(DEFAULT_USER);
 
-// Mock recommended projects based on adaptive engine
+// Initial projects list (populated with neutral defaults before auth hydration)
 const MOCK_PROJECTS: Project[] = initialAdaptive.projects;
 
 // Initial state for Roadmaps
@@ -426,11 +428,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   login: (email, name) => {
     const newUser = {
       id: 'user-' + Math.random().toString(36).substr(2, 9),
-      name: 'yogender verma',
-      email: 'yogendarverma0268@gmail.com',
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80',
-      careerGoal: 'AI Engineer',
-      skills: ['React', 'TypeScript', 'Tailwind CSS']
+      name: name || email?.split('@')[0] || 'User',
+      email: email || '',
+      avatarUrl: '',
+      careerGoal: 'fullstack',
+      skills: []
     };
     const adaptive = generateAdaptiveDashboard(newUser);
     set((state) => ({
@@ -444,11 +446,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   signup: (email, name, careerGoal) => {
     const newUser = {
       id: 'user-' + Math.random().toString(36).substr(2, 9),
-      name: 'yogender verma',
-      email: 'yogendarverma0268@gmail.com',
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80',
-      careerGoal: 'AI Engineer',
-      skills: ['React', 'TypeScript', 'Tailwind CSS']
+      name: name || email?.split('@')[0] || 'User',
+      email: email || '',
+      avatarUrl: '',
+      careerGoal: careerGoal || 'fullstack',
+      skills: []
     };
     const adaptive = generateAdaptiveDashboard(newUser);
     set((state) => ({
@@ -475,11 +477,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!dbUser) return;
     set((state) => {
       const updatedUser = {
-        id: dbUser.clerkId || dbUser.id,
-        name: 'yogender verma',
-        email: 'yogendarverma0268@gmail.com',
-        avatarUrl: dbUser.imageUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80',
-        careerGoal: 'AI Engineer',
+        id: dbUser.clerkId || dbUser.id || '',
+        name: dbUser.fullName || dbUser.email?.split('@')[0] || 'Anonymous User',
+        email: dbUser.email || '',
+        avatarUrl: dbUser.imageUrl || '',
+        careerGoal: dbUser.dreamRole || 'fullstack',
         skills: dbUser.skills || []
       };
       const adaptive = generateAdaptiveDashboard(updatedUser);
