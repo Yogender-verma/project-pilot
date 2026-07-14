@@ -22,7 +22,7 @@ export async function saveOnboardingData(data: OnboardingPayload) {
   if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
     const session = await auth();
     userId = session.userId;
-  } else {
+  } else if (process.env.NODE_ENV === 'development') {
     userId = 'mock-developer-id';
   }
 
@@ -88,7 +88,7 @@ export async function getCurrentUserProfile() {
   if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
     const session = await auth();
     userId = session.userId;
-  } else {
+  } else if (process.env.NODE_ENV === 'development') {
     userId = 'mock-developer-id';
   }
 
