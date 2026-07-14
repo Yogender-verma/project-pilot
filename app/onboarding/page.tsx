@@ -41,7 +41,7 @@ const PREDEFINED_SKILLS = [
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { onboardingData, onboardingStep, setOnboardingField, setOnboardingStep, login, syncUserProfile } = useAppStore();
+  const { onboardingData, onboardingStep, setOnboardingField, setOnboardingStep, syncUserProfile } = useAppStore();
   const { user: clerkUser, isLoaded } = useUser();
 
   // Auto-fill onboarding name and email from Clerk Google OAuth session
@@ -107,11 +107,36 @@ export default function OnboardingPage() {
       const freshProfile = await getCurrentUserProfile();
       if (freshProfile) {
         syncUserProfile(freshProfile);
+      } else {
+        // DB returned null (e.g. Clerk userId not yet propagated) —
+        // fall back to onboarding form data so the user sees their own
+        // data on the dashboard instead of a blank/dummy state.
+        syncUserProfile({
+          fullName: onboardingData.fullName,
+          email: onboardingData.email,
+          imageUrl: clerkUser?.imageUrl || null,
+          dreamRole: onboardingData.dreamRole,
+          skills: onboardingData.skills,
+          githubUrl: onboardingData.githubUrl || null,
+          linkedinUrl: onboardingData.linkedinUrl || null,
+          resumeUrl: onboardingData.resumeName || null,
+        });
       }
       setDbSaved(true);
     } catch (err) {
       console.error('Failed saving onboarding details to database:', err);
-      // Gracefully continue to dashboard in offline local dev mode
+      // Gracefully continue — use onboarding form data directly so the
+      // user never sees blank or dummy data on the dashboard.
+      syncUserProfile({
+        fullName: onboardingData.fullName,
+        email: onboardingData.email,
+        imageUrl: clerkUser?.imageUrl || null,
+        dreamRole: onboardingData.dreamRole,
+        skills: onboardingData.skills,
+        githubUrl: onboardingData.githubUrl || null,
+        linkedinUrl: onboardingData.linkedinUrl || null,
+        resumeUrl: onboardingData.resumeName || null,
+      });
       setDbSaved(true);
     }
   };
@@ -147,12 +172,14 @@ export default function OnboardingPage() {
   }, [isAnalyzing]);
 
   // 2. Safe Redirect Effect (Triggered only when simulation finishes and DB saves successfully)
+  // Note: login() is intentionally NOT called here. syncUserProfile() already sets
+  // isAuthenticated:true and populates the store with real data. Calling login() after
+  // would overwrite the store with an empty skeleton (skills:[], careerGoal:'fullstack').
   useEffect(() => {
     if (isAnalyzing && analysisProgress === 100 && dbSaved) {
-      login(onboardingData.email || '', onboardingData.fullName || '');
       router.push('/dashboard');
     }
-  }, [isAnalyzing, analysisProgress, dbSaved, onboardingData.email, onboardingData.fullName, login, router]);
+  }, [isAnalyzing, analysisProgress, dbSaved, router]);
 
   const handleNext = () => {
     if (onboardingStep < 8) {
