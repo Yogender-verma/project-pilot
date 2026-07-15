@@ -20,6 +20,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { useUser } from '@clerk/nextjs';
 import { getCurrentUserProfile } from '@/app/actions/user';
 
 export default function DashboardLayout({
@@ -34,20 +35,67 @@ export default function DashboardLayout({
   const [showNotifications, setShowNotifications] = useState(false);
   const [darkTheme, setDarkTheme] = useState(true);
 
-  // Auto-sync persistent profile from PostgreSQL on mount / refresh
+  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
+
+  // Auto-sync persistent profile from PostgreSQL on mount / refresh.
+  // Clerk identity (name, email, avatar) is always used as the source of truth
+  // for basic identity fields so the user never sees 'Dev User' or placeholder data.
   React.useEffect(() => {
+    if (!clerkLoaded) return;
+
     const hydrateUser = async () => {
       try {
-        const profile = await getCurrentUserProfile();
-        if (profile) {
-          syncUserProfile(profile);
+        const dbProfile = await getCurrentUserProfile();
+
+        // Build Clerk identity fields — always real, always available once loaded
+        const clerkIdentity = clerkUser ? {
+          fullName:
+            clerkUser.fullName ||
+            [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') ||
+            clerkUser.emailAddresses[0]?.emailAddress?.split('@')[0] ||
+            '',
+          email: clerkUser.emailAddresses[0]?.emailAddress || '',
+          imageUrl: clerkUser.imageUrl || null,
+        } : null;
+
+        if (dbProfile) {
+          // Merge: prefer DB fields for skills/dreamRole, prefer Clerk for identity
+          syncUserProfile({
+            ...dbProfile,
+            fullName: clerkIdentity?.fullName || dbProfile.fullName,
+            email: clerkIdentity?.email || dbProfile.email,
+            imageUrl: clerkIdentity?.imageUrl || dbProfile.imageUrl,
+          });
+        } else if (clerkIdentity) {
+          // DB returned null (not yet synced) — use Clerk identity only
+          syncUserProfile({
+            fullName: clerkIdentity.fullName,
+            email: clerkIdentity.email,
+            imageUrl: clerkIdentity.imageUrl,
+            skills: [],
+            dreamRole: '',
+          });
         }
       } catch (err) {
         console.error('Failed to sync user profile in dashboard layout:', err);
+        // Even on error, show the Clerk user's real identity
+        if (clerkUser) {
+          syncUserProfile({
+            fullName:
+              clerkUser.fullName ||
+              [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') ||
+              clerkUser.emailAddresses[0]?.emailAddress?.split('@')[0] ||
+              '',
+            email: clerkUser.emailAddresses[0]?.emailAddress || '',
+            imageUrl: clerkUser.imageUrl || null,
+            skills: [],
+            dreamRole: '',
+          });
+        }
       }
     };
     hydrateUser();
-  }, [syncUserProfile]);
+  }, [clerkLoaded, clerkUser, syncUserProfile]);
 
   // Derive page name from route path
   const getPageTitle = () => {

@@ -44,8 +44,8 @@ export async function saveOnboardingData(data: OnboardingPayload) {
       },
       create: {
         clerkId: userId,
-        fullName: 'Developer Sandbox User',
-        email: 'sandbox@projectpilot.ai',
+        fullName: 'Dev User',
+        email: `dev-${userId}@localhost`,
         dreamRole: data.dreamRole,
         skills: data.skills,
         githubUrl: data.githubUrl || null,
@@ -62,8 +62,8 @@ export async function saveOnboardingData(data: OnboardingPayload) {
       console.warn('Postgres offline. Proceeding with offline-mode mock bypass.');
       return {
         clerkId: userId,
-        fullName: 'Developer Sandbox User',
-        email: 'sandbox@projectpilot.ai',
+        fullName: 'Dev User',
+        email: `dev-${userId}@localhost`,
         dreamRole: data.dreamRole,
         skills: data.skills,
         githubUrl: data.githubUrl,
@@ -102,23 +102,8 @@ export async function getCurrentUserProfile() {
     });
   } catch (error) {
     console.error('Failed to fetch user profile:', error);
-    if (process.env.NODE_ENV === 'development') {
-      return {
-        clerkId: userId,
-        fullName: 'Developer Sandbox User',
-        email: 'sandbox@projectpilot.ai',
-        imageUrl: null,
-        skills: ['React', 'TypeScript', 'Tailwind CSS'],
-        dreamRole: 'AI Engineer',
-        githubUrl: 'https://github.com/developer',
-        linkedinUrl: 'https://linkedin.com/in/developer',
-        resumeUrl: 'sandbox_resume.pdf',
-        dailyStudyTime: 15,
-        onboardingCompleted: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-    }
+    // Return null so callers can fall back to Clerk identity data.
+    // Do NOT return a fake 'Dev User' object \u2014 that causes dummy data to appear on the dashboard.
     return null;
   }
 }

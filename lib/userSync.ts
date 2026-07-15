@@ -22,9 +22,10 @@ export async function syncClerkUser(clerkUser: ClerkUserParam) {
     throw new Error('User has no valid email address associated with Clerk profile.');
   }
 
-  const fullName = [clerkUser.firstName, clerkUser.lastName]
-    .filter(Boolean)
-    .join(' ') || 'Google User';
+  const fullName =
+    [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') ||
+    clerkUser.emailAddresses[0]?.emailAddress?.split('@')[0] ||
+    'Anonymous User';
 
   const imageUrl = clerkUser.imageUrl || null;
 
