@@ -349,11 +349,10 @@ export default function DashboardLayout({
                   key={m.name}
                   href={m.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-xl text-xs font-semibold ${
-                    pathname === m.href
+                  className={`px-4 py-3 rounded-xl text-xs font-semibold ${pathname === m.href
                       ? 'bg-indigo-600/10 border border-indigo-500/20 text-indigo-400'
                       : ''
-                  }`}
+                    }`}
                   style={pathname !== m.href ? { color: 'var(--text-secondary)' } : {}}
                 >
                   {m.name}

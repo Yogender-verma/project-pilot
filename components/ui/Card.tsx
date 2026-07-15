@@ -25,7 +25,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
           {...(props as any)}
         >
           {glowColor && (
-            <div 
+            <div
               className="absolute -top-12 -right-12 w-36 h-36 rounded-full blur-[60px] opacity-10 pointer-events-none"
               style={{ backgroundColor: glowColor }}
             />
@@ -46,7 +46,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         {...props}
       >
         {glowColor && (
-          <div 
+          <div
             className="absolute -top-12 -right-12 w-36 h-36 rounded-full blur-[60px] opacity-10 pointer-events-none"
             style={{ backgroundColor: glowColor }}
           />
@@ -65,14 +65,31 @@ export const CardHeader = ({ className, children, ...props }: React.HTMLAttribut
   </div>
 );
 
+/*
+ * CardTitle — removed hardcoded `text-white`.
+ * Inherits colour from var(--text-primary) via the body rule so it reads
+ * as near-white on dark and deep navy on light.
+ */
 export const CardTitle = ({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-  <h3 className={cn('text-lg font-semibold leading-none tracking-tight text-white', className)} {...props}>
+  <h3
+    className={cn('text-lg font-semibold leading-none tracking-tight', className)}
+    style={{ color: 'var(--text-primary)' }}
+    {...props}
+  >
     {children}
   </h3>
 );
 
+/*
+ * CardDescription — removed hardcoded `text-slate-400`.
+ * Uses var(--text-muted) so it is visible in both themes.
+ */
 export const CardDescription = ({ className, children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
-  <p className={cn('text-sm text-slate-400', className)} {...props}>
+  <p
+    className={cn('text-sm', className)}
+    style={{ color: 'var(--text-muted)' }}
+    {...props}
+  >
     {children}
   </p>
 );
@@ -83,8 +100,16 @@ export const CardContent = ({ className, children, ...props }: React.HTMLAttribu
   </div>
 );
 
+/*
+ * CardFooter — removed hardcoded `border-white/5`.
+ * Uses var(--border-subtle) so the divider line shows on both themes.
+ */
 export const CardFooter = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex items-center pt-4 border-t border-white/5 mt-4', className)} {...props}>
+  <div
+    className={cn('flex items-center pt-4 mt-4', className)}
+    style={{ borderTop: '1px solid var(--border-subtle)' }}
+    {...props}
+  >
     {children}
   </div>
 );

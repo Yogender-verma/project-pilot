@@ -64,21 +64,22 @@ export default function MainDashboardPage() {
   return (
     <div className="space-y-8 pb-12">
       {/* Welcome Banner */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-panel p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#0c092c]/75 via-[#08051e]/80 to-transparent border-indigo-500/25 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+        className="glass-panel p-6 sm:p-8 rounded-3xl border-indigo-500/25 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+        style={{ backgroundColor: 'var(--surface-card)' }}
       >
         <div className="space-y-2">
           <div className="flex items-center space-x-2 text-indigo-400">
             <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: '3s' }} />
             <span className="text-xs font-bold uppercase tracking-wider font-mono">Welcome back to Pilot Terminal</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
+          <h2 className="text-2xl sm:text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>
             Hello, {user?.name || 'Pilot'}
           </h2>
-          <p className="text-slate-400 text-xs sm:text-sm max-w-xl leading-relaxed">
-            Your career target is set to <span className="text-indigo-300 font-bold">{user?.careerGoal}</span>. Complete recommendations to close your remaining skill gaps.
+          <p className="text-xs sm:text-sm max-w-xl leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            Your career target is set to <span className="text-indigo-400 font-bold">{user?.careerGoal}</span>. Complete recommendations to close your remaining skill gaps.
           </p>
         </div>
 
@@ -140,11 +141,11 @@ export default function MainDashboardPage() {
                 <Badge variant="success">Good match</Badge>
               </div>
               <div className="flex items-baseline space-x-2">
-                <span className="text-4xl font-extrabold text-white">{careerScore.resumeScore}%</span>
-                <span className="text-xs text-slate-400">ATS Rating</span>
+                <span className="text-4xl font-extrabold" style={{ color: 'var(--text-primary)' }}>{careerScore.resumeScore}%</span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>ATS Rating</span>
               </div>
               <Progress value={careerScore.resumeScore} className="h-1.5 mt-4" />
-              <p className="text-[11px] text-slate-400 mt-3">
+              <p className="text-[11px] mt-3" style={{ color: 'var(--text-muted)' }}>
                 12 High-priority keywords detected. Missing AI/Vector descriptors.
               </p>
             </CardContent>
@@ -161,11 +162,11 @@ export default function MainDashboardPage() {
                 <Badge variant="glow">Synced</Badge>
               </div>
               <div className="flex items-baseline space-x-2">
-                <span className="text-4xl font-extrabold text-white">{githubAnalytics.consistencyScore}</span>
-                <span className="text-xs text-slate-400">Consistency Score</span>
+                <span className="text-4xl font-extrabold" style={{ color: 'var(--text-primary)' }}>{githubAnalytics.consistencyScore}</span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Consistency Score</span>
               </div>
               <Progress value={githubAnalytics.consistencyScore} barClassName="bg-gradient-to-r from-purple-500 to-pink-500" className="h-1.5 mt-4" />
-              <p className="text-[11px] text-slate-400 mt-3">
+              <p className="text-[11px] mt-3" style={{ color: 'var(--text-muted)' }}>
                 Scanned {githubAnalytics.totalRepos} repositories. {githubAnalytics.totalCommits} historical commits mapped.
               </p>
             </CardContent>
@@ -190,20 +191,20 @@ export default function MainDashboardPage() {
             </div>
             <Badge variant="glow">★ Impact: +45% Score</Badge>
           </CardHeader>
-          <CardContent className="text-xs sm:text-sm text-slate-300 space-y-4 pt-1 flex-1">
-            <p className="leading-relaxed text-slate-400">{activeRecommendedProject.description}</p>
+          <CardContent className="text-xs sm:text-sm space-y-4 pt-1 flex-1" style={{ color: 'var(--text-secondary)' }}>
+            <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{activeRecommendedProject.description}</p>
             <div className="flex flex-wrap gap-1.5">
               {activeRecommendedProject.technologies.slice(0, 5).map(tech => (
-                <span key={tech} className="px-2 py-0.5 bg-white/5 border border-white/5 rounded-md text-[10px] font-mono text-slate-300">
+                <span key={tech} className="px-2 py-0.5 rounded-md text-[10px] font-mono" style={{ backgroundColor: 'var(--hover-bg)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
                   {tech}
                 </span>
               ))}
             </div>
             
-            <div className="p-3.5 bg-indigo-500/5 rounded-xl border border-indigo-500/10 text-xs text-slate-300 flex items-start space-x-2">
+            <div className="p-3.5 bg-indigo-500/5 rounded-xl border border-indigo-500/10 text-xs flex items-start space-x-2" style={{ color: 'var(--text-secondary)' }}>
               <Sparkles className="w-4.5 h-4.5 text-indigo-400 shrink-0 mt-0.5 animate-pulse" />
               <div>
-                <span className="font-semibold text-white">AI Suggestion:</span> {activeRecommendedProject.recommendationReason}
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>AI Suggestion:</span> {activeRecommendedProject.recommendationReason}
               </div>
             </div>
           </CardContent>
@@ -296,7 +297,7 @@ export default function MainDashboardPage() {
               </ResponsiveContainer>
             )}
           </CardContent>
-          <CardFooter className="pt-2 flex items-center justify-between text-xs text-slate-500">
+          <CardFooter className="pt-2 flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
             <span>Average: 5.7 commits / day</span>
             <Link href="/dashboard/github" className="text-indigo-400 font-semibold hover:underline flex items-center">
               GitHub analytics <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
@@ -318,22 +319,22 @@ export default function MainDashboardPage() {
             <div className="flex items-start space-x-3">
               <Badge variant="glow" className="shrink-0 bg-indigo-600/20 text-indigo-300 border-indigo-600/30">D1-3</Badge>
               <div>
-                <h4 className="font-bold text-slate-200">System Shell Ingestion</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">Build dashboard containers, set styling custom properties, initialize Git.</p>
+                <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>System Shell Ingestion</h4>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Build dashboard containers, set styling custom properties, initialize Git.</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
               <Badge variant="glow" className="shrink-0 bg-purple-600/20 text-purple-300 border-purple-600/30">D4-5</Badge>
               <div>
-                <h4 className="font-bold text-slate-200">Connect Orchestrator APIs</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">Configure Next.js Server Actions connecting GPT OpenAI Assistant SDK hooks.</p>
+                <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>Connect Orchestrator APIs</h4>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Configure Next.js Server Actions connecting GPT OpenAI Assistant SDK hooks.</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
               <Badge variant="glow" className="shrink-0 bg-slate-600/20 text-slate-400 border-slate-600/30">D6-7</Badge>
               <div>
-                <h4 className="font-bold text-slate-200">Zod schemas & Types</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">Add strict TypeScript interfaces and validation checks to coordinate state payload forms.</p>
+                <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>Zod schemas & Types</h4>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Add strict TypeScript interfaces and validation checks to coordinate state payload forms.</p>
               </div>
             </div>
           </CardContent>

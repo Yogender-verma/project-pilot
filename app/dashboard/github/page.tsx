@@ -42,11 +42,11 @@ export default function GitHubAnalyticsPage() {
     <div className="space-y-8 pb-12">
       {/* Title Header */}
       <div>
-        <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
+        <h2 className="text-2xl font-bold flex items-center space-x-2" style={{ color: 'var(--text-primary)' }}>
           <Github className="w-6 h-6 text-indigo-400" />
           <span>GitHub Deep Analytics</span>
         </h2>
-        <p className="text-xs sm:text-sm text-slate-400 mt-1">
+        <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
           Automated intelligence analysis of linked profile: <span className="text-indigo-300 font-bold">{githubAnalytics.username}</span>.
         </p>
       </div>
@@ -63,23 +63,23 @@ export default function GitHubAnalyticsPage() {
           </CardHeader>
           <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4 flex-1">
             <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Total Repos</span>
-              <h3 className="text-3xl font-extrabold text-white">{githubAnalytics.totalRepos}</h3>
+              <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Total Repos</span>
+              <h3 className="text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>{githubAnalytics.totalRepos}</h3>
               <p className="text-[10px] text-indigo-400 font-semibold">Active & Analyzed</p>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Total Commits</span>
-              <h3 className="text-3xl font-extrabold text-white">{githubAnalytics.totalCommits}</h3>
+              <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Total Commits</span>
+              <h3 className="text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>{githubAnalytics.totalCommits}</h3>
               <p className="text-[10px] text-emerald-400 font-semibold">High consistency</p>
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Portfolio Strength</span>
-              <h3 className="text-3xl font-extrabold text-white">{githubAnalytics.portfolioStrengthScore}%</h3>
+              <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Portfolio Strength</span>
+              <h3 className="text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>{githubAnalytics.portfolioStrengthScore}%</h3>
               <Progress value={githubAnalytics.portfolioStrengthScore} className="h-1.5 mt-2" />
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">AI Readiness</span>
-              <h3 className="text-3xl font-extrabold text-white">{githubAnalytics.aiEngineerReadiness}%</h3>
+              <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>AI Readiness</span>
+              <h3 className="text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>{githubAnalytics.aiEngineerReadiness}%</h3>
               <Progress value={githubAnalytics.aiEngineerReadiness} className="h-1.5 mt-2 bg-slate-800 [&>div]:bg-indigo-500" />
             </div>
           </CardContent>
@@ -114,9 +114,9 @@ export default function GitHubAnalyticsPage() {
           </CardContent>
           <CardFooter className="pt-1 flex flex-wrap gap-1 text-[9px] font-semibold justify-center">
             {githubAnalytics.languages.map(lang => (
-              <span key={lang.name} className="px-1.5 py-0.5 bg-white/5 rounded flex items-center space-x-1">
+              <span key={lang.name} className="px-1.5 py-0.5 rounded flex items-center space-x-1" style={{ backgroundColor: 'var(--hover-bg)' }}>
                 <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: lang.color }} />
-                <span className="text-slate-300">{lang.name}</span>
+                <span style={{ color: 'var(--text-secondary)' }}>{lang.name}</span>
               </span>
             ))}
           </CardFooter>
@@ -134,12 +134,12 @@ export default function GitHubAnalyticsPage() {
             <CardTitle className="text-base font-bold">Automated Profile Analysis</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
-            {githubAnalytics.recruiterInsights.map((insight, idx) => (
-              <div key={idx} className="p-3 bg-white/5 rounded-lg border border-white/5 flex items-start space-x-3 text-sm text-slate-300 leading-relaxed">
-                <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-                <span>{insight}</span>
-              </div>
-            ))}
+              {githubAnalytics.recruiterInsights.map((insight, idx) => (
+              <div key={idx} className="p-3 rounded-lg border flex items-start space-x-3 text-sm leading-relaxed" style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}>
+                  <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                  <span>{insight}</span>
+                </div>
+              ))}
           </CardContent>
         </Card>
 
@@ -170,7 +170,7 @@ export default function GitHubAnalyticsPage() {
             </CardHeader>
             <CardContent className="space-y-2 pt-1">
               {githubAnalytics.growthRecommendations.map((rec, idx) => (
-                <div key={idx} className="flex items-center space-x-2 text-xs sm:text-sm text-slate-300">
+                <div key={idx} className="flex items-center space-x-2 text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <ArrowUpRight className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span>{rec}</span>
                 </div>
@@ -182,7 +182,7 @@ export default function GitHubAnalyticsPage() {
 
       {/* Repository Intelligence */}
       <div>
-        <h3 className="text-lg font-bold text-white flex items-center space-x-2 mb-4">
+        <h3 className="text-lg font-bold flex items-center space-x-2 mb-4" style={{ color: 'var(--text-primary)' }}>
           <Code className="w-5 h-5 text-indigo-400" />
           <span>Repository Intelligence</span>
         </h3>
@@ -203,7 +203,7 @@ export default function GitHubAnalyticsPage() {
                 <div className="space-y-3">
                   <div>
                     <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Key Analysis</p>
-                    <ul className="text-[11px] text-slate-300 space-y-1 list-disc pl-3">
+                    <ul className="text-[11px] space-y-1 list-disc pl-3" style={{ color: 'var(--text-secondary)' }}>
                       {repo.analysis.slice(0, 2).map((a, i) => <li key={i}>{a}</li>)}
                     </ul>
                   </div>
@@ -211,7 +211,7 @@ export default function GitHubAnalyticsPage() {
                     <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Detected Stack</p>
                     <div className="flex flex-wrap gap-1">
                       {repo.detectedSkills.slice(0, 3).map((s, i) => (
-                        <span key={i} className="text-[9px] bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-slate-300">{s}</span>
+                        <span key={i} className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--hover-bg)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>{s}</span>
                       ))}
                     </div>
                   </div>
@@ -221,7 +221,7 @@ export default function GitHubAnalyticsPage() {
                 <p className="text-[10px] text-amber-400 font-semibold flex items-center">
                   <Zap className="w-3 h-3 mr-1" /> Next Step:
                 </p>
-                <p className="text-[11px] text-slate-400">{repo.growthRecommendation[0]}</p>
+                <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{repo.growthRecommendation[0]}</p>
               </CardFooter>
             </Card>
           ))}

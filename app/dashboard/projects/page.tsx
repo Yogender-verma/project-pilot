@@ -114,7 +114,8 @@ export default function RecommendedProjectsPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="bg-[#0c0926] text-xs font-semibold text-slate-300 rounded-xl border border-white/5 px-3 py-2.5 focus:outline-none focus:border-indigo-500/55 cursor-pointer"
+            className="text-xs font-semibold rounded-xl border px-3 py-2.5 focus:outline-none focus:border-indigo-500/55 cursor-pointer"
+            style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
           >
             <option value="resumeValue">Resume Value Rank</option>
             <option value="duration">Completion Duration</option>
@@ -217,9 +218,9 @@ export default function RecommendedProjectsPage() {
                       </div>
                     </div>
 
-                    <CardFooter className="pt-2 border-t border-white/5 mt-6">
+                    <CardFooter className="pt-2 border-t mt-6" style={{ borderColor: 'var(--border-subtle)' }}>
                       <Button
-                        variant={isSelected ? 'glow' : 'default'}
+                        variant={isSelected ? 'glow' : 'outline'}
                         className="w-full text-xs h-11"
                         onClick={() => handleBuildProject(project.id, project.title)}
                         rightIcon={isSelected ? <Check className="w-4 h-4 text-indigo-400" /> : <ArrowUpRight className="w-4 h-4" />}

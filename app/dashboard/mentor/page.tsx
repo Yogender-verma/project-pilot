@@ -96,10 +96,10 @@ export default function AiMentorChatPage() {
   ];
 
   return (
-    <div className="flex h-[80vh] border border-white/5 bg-[#060417]/30 rounded-3xl overflow-hidden glass-panel">
+    <div className="flex h-[80vh] border rounded-3xl overflow-hidden glass-panel" style={{ borderColor: 'var(--border-subtle)' }}>
       {/* Left panel: Conversation History */}
-      <div className="hidden md:flex flex-col w-64 border-r border-white/5 bg-[#060417]/50 h-full">
-        <div className="p-4 border-b border-white/5">
+      <div className="hidden md:flex flex-col w-64 border-r h-full" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--surface-secondary)' }}>
+        <div className="p-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
           <Button 
             variant="glow" 
             className="w-full text-xs h-10" 
@@ -118,8 +118,9 @@ export default function AiMentorChatPage() {
               <div
                 key={c.id}
                 className={`flex items-center justify-between p-3 rounded-xl cursor-pointer group text-xs font-semibold ${
-                  isActive ? 'bg-indigo-600/15 text-indigo-300' : 'text-slate-400 hover:text-white hover:bg-white/2'
+                  isActive ? 'bg-indigo-600/15 text-indigo-400' : 'hover:bg-indigo-500/5'
                 }`}
+                style={!isActive ? { color: 'var(--text-secondary)' } : {}}
                 onClick={() => selectConversation(c.id)}
               >
                 <div className="flex items-center space-x-2 truncate pr-2">
@@ -151,16 +152,16 @@ export default function AiMentorChatPage() {
         />
 
         {/* Chat top info header */}
-        <div className="h-16 border-b border-white/5 px-6 flex items-center justify-between shrink-0">
+        <div className="h-16 border-b px-6 flex items-center justify-between shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center animate-pulse">
               <Compass className="w-4.5 h-4.5" />
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-white truncate max-w-md">
+              <h3 className="text-xs sm:text-sm font-bold truncate max-w-md" style={{ color: 'var(--text-primary)' }}>
                 {activeConv?.title || 'Mentor Guidance'}
               </h3>
-              <p className="text-[10px] text-slate-400">Context: Active Match Blueprint and Roadmap</p>
+              <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Context: Active Match Blueprint and Roadmap</p>
             </div>
           </div>
           <Badge variant="glow" className="text-[10px] font-mono">ONLINE</Badge>
@@ -185,10 +186,12 @@ export default function AiMentorChatPage() {
 
                 {/* Message Bubble */}
                 <div className={`max-w-xl space-y-3.5 p-4 rounded-2xl text-xs sm:text-sm leading-relaxed ${
-                  isUser 
-                    ? 'bg-indigo-600/15 text-indigo-200 border border-indigo-500/10 rounded-tr-none' 
-                    : 'bg-[#08051e]/40 border border-white/5 text-slate-300 rounded-tl-none'
-                }`}>
+                  isUser
+                    ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/20 rounded-tr-none'
+                    : 'border rounded-tl-none'
+                }`}
+                style={!isUser ? { backgroundColor: 'var(--hover-bg-strong)', borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' } : {}}
+                >
                   
                   {/* Text content rendering */}
                   <p className="whitespace-pre-line">{msg.content}</p>
@@ -254,7 +257,8 @@ export default function AiMentorChatPage() {
                   setInputMessage(p.value);
                   handleSend();
                 }}
-                className="px-3 py-2 bg-white/2 hover:bg-white/5 border border-white/5 rounded-xl text-left text-[11px] text-indigo-300 font-semibold cursor-pointer max-w-sm transition-all"
+            className="px-3 py-2 border rounded-xl text-left text-[11px] text-indigo-400 font-semibold cursor-pointer max-w-sm transition-all"
+                style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
               >
                 ★ {p.label}
               </button>
@@ -263,7 +267,7 @@ export default function AiMentorChatPage() {
         )}
 
         {/* Input box form container */}
-        <div className="p-6 border-t border-white/5 shrink-0 bg-[#030014]/40">
+        <div className="p-6 border-t shrink-0" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--surface-secondary)' }}>
           
           {/* File attachment preview */}
           {attachment && (
@@ -283,7 +287,12 @@ export default function AiMentorChatPage() {
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={2}
-              className="w-full bg-[#0a071a]/50 text-xs sm:text-sm rounded-2xl border border-white/10 p-4 pr-32 focus:outline-none focus:border-indigo-500/80 text-slate-200 placeholder-slate-500 resize-none glass-panel"
+              className="w-full text-xs sm:text-sm rounded-2xl border p-4 pr-32 focus:outline-none resize-none glass-panel"
+              style={{
+                backgroundColor: 'var(--input-bg)',
+                borderColor: 'var(--input-border)',
+                color: 'var(--text-primary)',
+              }}
             />
             
             {/* Input Action tools (File attach & Send button) */}
