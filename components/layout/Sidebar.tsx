@@ -4,19 +4,19 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useClerk } from '@clerk/nextjs';
-import { 
-  Compass, 
-  LayoutDashboard, 
-  FolderGit2, 
-  Map, 
-  MessageSquareCode, 
-  GitMerge, 
-  Award, 
-  Settings, 
-  ChevronLeft, 
-  ChevronRight, 
-  LogOut, 
-  User as UserIcon 
+import {
+  Compass,
+  LayoutDashboard,
+  FolderGit2,
+  Map,
+  MessageSquareCode,
+  GitMerge,
+  Award,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
@@ -49,27 +49,46 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
   ];
 
   return (
+    /*
+     * All hard-coded hex colours replaced with CSS custom-property style
+     * attributes so the sidebar surface flips automatically when the
+     * data-theme attribute on <html> changes.
+     */
     <aside
       className={cn(
-        'hidden md:flex flex-col h-screen sticky top-0 bg-[#060417] border-r border-white/5 transition-all duration-300 z-30',
+        'hidden md:flex flex-col h-screen sticky top-0 border-r transition-all duration-300 z-30',
         collapsed ? 'w-20' : 'w-64'
       )}
+      style={{
+        backgroundColor: 'var(--surface-primary)',
+        borderColor: 'var(--border-subtle)',
+      }}
     >
       {/* Brand Header */}
-      <div className="flex items-center justify-between h-20 px-6 border-b border-white/5">
+      <div
+        className="flex items-center justify-between h-20 px-6 border-b"
+        style={{ borderColor: 'var(--border-subtle)' }}
+      >
         <Link href="/dashboard" className="flex items-center space-x-3 group overflow-hidden">
           <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400 shrink-0">
             <Compass className="w-5 h-5" />
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold tracking-wider text-white select-none transition-opacity duration-300">
+            <span
+              className="text-lg font-bold tracking-wider select-none transition-opacity duration-300"
+              style={{ color: 'var(--text-primary)' }}
+            >
               Pilot<span className="text-indigo-400">AI</span>
             </span>
           )}
         </Link>
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 hover:bg-white/5 rounded-lg border border-white/5 text-slate-400 hover:text-white cursor-pointer"
+          className="p-1.5 rounded-lg border transition-colors cursor-pointer"
+          style={{
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-secondary)',
+          }}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
@@ -87,12 +106,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
               href={item.href}
               className={cn(
                 'flex items-center space-x-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative',
-                isActive 
-                  ? 'bg-indigo-600/15 border border-indigo-500/20 text-indigo-300 shadow-[0_0_12px_rgba(99,102,241,0.05)]' 
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
+                isActive
+                  ? 'bg-indigo-600/15 border border-indigo-500/20 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.05)]'
+                  : 'border border-transparent'
               )}
+              style={!isActive ? { color: 'var(--text-secondary)' } : {}}
             >
-              <Icon className={cn('w-5 h-5 shrink-0 transition-transform duration-200 group-hover:scale-105', isActive ? 'text-indigo-400' : 'text-slate-400')} />
+              <Icon
+                className={cn(
+                  'w-5 h-5 shrink-0 transition-transform duration-200 group-hover:scale-105',
+                  isActive ? 'text-indigo-400' : ''
+                )}
+                style={!isActive ? { color: 'var(--text-muted)' } : {}}
+              />
               {!collapsed && (
                 <span className="truncate transition-opacity duration-300">
                   {item.name}
@@ -100,7 +126,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
               )}
               {/* Tooltip for collapsed state */}
               {collapsed && (
-                <div className="absolute left-20 bg-slate-900 border border-white/10 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-xl whitespace-nowrap z-50">
+                <div
+                  className="absolute left-20 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-xl whitespace-nowrap z-50 border"
+                  style={{
+                    backgroundColor: 'var(--panel-bg)',
+                    borderColor: 'var(--panel-border)',
+                    color: 'var(--text-primary)',
+                  }}
+                >
                   {item.name}
                 </div>
               )}
@@ -110,8 +143,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
       </nav>
 
       {/* User Session Info & Action */}
-      <div className="p-4 border-t border-white/5">
-        <div className={cn('flex items-center space-x-3 p-2 rounded-xl mb-3', !collapsed && 'bg-white/2')}>
+      <div
+        className="p-4 border-t"
+        style={{ borderColor: 'var(--border-subtle)' }}
+      >
+        <div
+          className={cn('flex items-center space-x-3 p-2 rounded-xl mb-3')}
+          style={!collapsed ? { backgroundColor: 'var(--hover-bg)' } : {}}
+        >
           <div className="w-10 h-10 rounded-full overflow-hidden border border-indigo-500/30 flex items-center justify-center bg-indigo-500/10 shrink-0">
             {user?.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -122,16 +161,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
           </div>
           {!collapsed && (
             <div className="truncate flex-1">
-              <h4 className="text-sm font-semibold text-slate-200 truncate">{user?.name}</h4>
-              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+              <h4
+                className="text-sm font-semibold truncate"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {user?.name}
+              </h4>
+              <p
+                className="text-xs truncate"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                {user?.email}
+              </p>
             </div>
           )}
         </div>
         <button
           onClick={handleSignOut}
-          className={cn(
-            'flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-rose-300 hover:bg-rose-500/5 transition-all duration-200 w-full group cursor-pointer'
-          )}
+          className="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium hover:text-rose-300 hover:bg-rose-500/5 transition-all duration-200 w-full group cursor-pointer"
+          style={{ color: 'var(--text-secondary)' }}
         >
           <LogOut className="w-5 h-5 shrink-0" />
           {!collapsed && <span>Sign Out</span>}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
+import { ThemeProvider } from '@/lib/ThemeProvider';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,10 +29,39 @@ export default function RootLayout({
       <html
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+        suppressHydrationWarning
       >
+        <head>
+          {/*
+           * Anti-Flash Script (inline, runs before React hydration)
+           *
+           * Reads the stored theme from localStorage and sets `data-theme`
+           * on <html> synchronously so users never see a flash of the wrong
+           * theme when they revisit the page with a saved light-mode preference.
+           */}
+          <script suppressHydrationWarning dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('projectpilot-theme');
+                  var theme = stored === 'light' ? 'light' : 'dark';
+                  document.documentElement.setAttribute('data-theme', theme);
+                } catch(e) {
+                  // localStorage unavailable (e.g. private-browsing restrictions) — use dark
+                  document.documentElement.setAttribute('data-theme', 'dark');
+                }
+              })();
+            `
+          }} />
+        </head>
         <body className="min-h-full flex flex-col">
-          {children}
-          <script dangerouslySetInnerHTML={{
+          {/* ThemeProvider wraps the entire app so every client component
+              can access useTheme() to read or change the active theme */}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+          {/* Hide Clerk dev-mode badge in development */}
+          <script suppressHydrationWarning dangerouslySetInnerHTML={{
             __html: `
               setInterval(() => {
                 const elements = document.querySelectorAll('div[class*="cl-"]');

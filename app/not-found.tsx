@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 
 export default function NotFound() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#030014] flex items-center justify-center px-6">
+    <div className="relative min-h-screen overflow-hidden flex items-center justify-center px-6" style={{ backgroundColor: 'var(--background)' }}>
       <div className="absolute inset-0 grid-bg grid-animated opacity-30" />
       <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-indigo-600/20 blur-[150px]" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[450px] h-[450px] rounded-full bg-purple-600/10 blur-[140px]" />
@@ -49,11 +49,11 @@ export default function NotFound() {
         </motion.h1>
 
 
-        <h2 className="mt-6 text-3xl sm:text-4xl md:text-5xl font-extrabold text-white">
+        <h2 className="mt-6 text-3xl sm:text-4xl md:text-5xl font-extrabold" style={{ color: 'var(--text-primary)' }}>
           Lost in the Project Universe
         </h2>
 
-        <p className="mt-6 max-w-lg mx-auto text-sm sm:text-base text-slate-400 leading-relaxed">
+        <p className="mt-6 max-w-lg mx-auto text-sm sm:text-base leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           The page you're trying to reach doesn't exist, has been moved,
           or the coordinates provided are incorrect.
           Let's navigate you back to a safe destination.
@@ -79,7 +79,8 @@ export default function NotFound() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="mt-12 flex items-center justify-center gap-6 text-xs text-slate-500 font-mono"
+          className="mt-12 flex items-center justify-center gap-6 text-xs font-mono"
+          style={{ color: 'var(--text-muted)' }}
         >
           <span className="flex items-center gap-2">
             <Compass className="w-4 h-4 text-indigo-400" />

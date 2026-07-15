@@ -34,8 +34,8 @@ export default function VisualRoadmapsPage() {
           <Map className="w-8 h-8" />
         </div>
         <div className="max-w-md space-y-2">
-          <h2 className="text-xl font-bold text-white">No active roadmap target selected</h2>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>No active roadmap target selected</h2>
+          <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
             Select a project recommendation from the catalog to configure dynamic day-by-day blueprints and track recruiter handshake completion scores.
           </p>
         </div>
@@ -66,11 +66,11 @@ export default function VisualRoadmapsPage() {
       {/* Title Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
+          <h2 className="text-2xl font-bold flex items-center space-x-2" style={{ color: 'var(--text-primary)' }}>
             <Map className="w-6 h-6 text-indigo-400 animate-pulse" />
             <span>Interactive Day-by-Day roadmaps</span>
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Day-by-Day milestone guidelines for: <span className="text-indigo-300 font-bold">{activeProject.title}</span>.
           </p>
         </div>
@@ -86,15 +86,15 @@ export default function VisualRoadmapsPage() {
       <Card hoverEffect={false} className="bg-[#08051e]/40 p-4 sm:p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
           <div className="space-y-1">
-            <span className="text-xs text-slate-400 font-mono uppercase tracking-widest">Roadmap Completion</span>
-            <h3 className="text-xl font-bold text-white">
+            <span className="text-xs font-mono uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Roadmap Completion</span>
+            <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
               {completedSteps} / {totalSteps} Milestones Complete
             </h3>
           </div>
           
           <div className="md:col-span-2 space-y-2.5">
             <div className="flex justify-between items-center text-xs font-mono">
-              <span className="text-slate-400">PROGRESS RATING</span>
+              <span className="text-slate-400" style={{ color: 'var(--text-muted)' }}>PROGRESS RATING</span>
               <span className="text-indigo-300 font-bold">{progressRate}%</span>
             </div>
             <Progress value={progressRate} className="h-2.5" />
@@ -139,19 +139,19 @@ export default function VisualRoadmapsPage() {
                         {step.type}
                       </Badge>
                     </div>
-                    <h3 className="text-lg font-bold text-white">{step.title}</h3>
+                    <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{step.title}</h3>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                  <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                     {step.description}
                   </p>
 
                   {/* Day-by-Day Task Checklist */}
                   <div className="space-y-2">
-                    <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest block">Milestone task details</span>
+                    <span className="text-[9px] font-semibold uppercase tracking-widest block" style={{ color: 'var(--text-muted)' }}>Milestone task details</span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {step.tasks.map((task, tidx) => (
-                        <div key={tidx} className="p-3 bg-white/2 rounded-xl border border-white/5 flex items-center space-x-2.5 text-xs text-slate-300">
+                        <div key={tidx} className="p-3 rounded-xl border flex items-center space-x-2.5 text-xs" style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}>
                           <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${step.completed ? 'bg-emerald-400' : 'bg-indigo-400'}`} />
                           <span className="truncate">{task}</span>
                         </div>
@@ -162,9 +162,9 @@ export default function VisualRoadmapsPage() {
 
                 {/* Right Metadata specs / Button */}
                 <div className="flex flex-row md:flex-col items-center gap-3 shrink-0 self-start md:self-stretch justify-between w-full md:w-auto md:border-l border-white/5 md:pl-6 pt-4 md:pt-0">
-                  <div className="hidden md:flex flex-col space-y-1 font-mono text-[10px] text-slate-400">
-                    <span className="uppercase text-slate-500">ESTIMATED COMMIT</span>
-                    <span className="font-bold text-white flex items-center">
+                  <div className="hidden md:flex flex-col space-y-1 font-mono text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                    <span className="uppercase" style={{ color: 'var(--text-muted)' }}>ESTIMATED COMMIT</span>
+                    <span className="font-bold flex items-center" style={{ color: 'var(--text-primary)' }}>
                       <Clock className="w-3.5 h-3.5 mr-1 text-indigo-400" />
                       8-10 Hours
                     </span>

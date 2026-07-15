@@ -7,85 +7,221 @@
   --font-mono: var(--font-geist-mono), monospace;
 }
 
+/* ─────────────────────────────────────────────────
+   DARK THEME (default)
+   All colour tokens live here as CSS custom props.
+   Components reference var(--token) so they flip
+   automatically when [data-theme="light"] is applied
+   to the <html> element by ThemeProvider.
+───────────────────────────────────────────────── */
 :root {
+  /* Core surface colours */
   --background: #030014;
   --foreground: #f8fafc;
-  
+  --surface-primary: #060417;
+  --surface-secondary: #0a071a;
+  --surface-card: rgba(10, 7, 26, 0.6);
+  --surface-overlay: rgba(3, 0, 20, 0.95);
+
+  /* Border & divider colours */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-medium: rgba(255, 255, 255, 0.08);
+  --border-glow: 0 0 12px rgba(99, 102, 241, 0.15);
+  --card-border: rgba(255, 255, 255, 0.06);
+
+  /* Text hierarchy */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-placeholder: #475569;
+
+  /* Interactive element tokens */
+  --input-bg: rgba(10, 7, 26, 0.5);
+  --input-border: rgba(255, 255, 255, 0.05);
+  --input-focus: rgba(99, 102, 241, 0.55);
+  --hover-bg: rgba(255, 255, 255, 0.04);
+  --hover-bg-strong: rgba(255, 255, 255, 0.08);
+
+  /* Glassmorphism & effects */
+  --card-glass: rgba(10, 7, 26, 0.6);
+  --glass-blur: blur(16px);
   --primary-glow: radial-gradient(rgba(120, 119, 198, 0.1), rgba(0, 0, 0, 0));
   --secondary-glow: linear-gradient(to bottom right, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.05));
-  
-  --border-glow: 0 0 12px rgba(99, 102, 241, 0.15);
-  --card-glass: rgba(10, 7, 26, 0.6);
-  --card-border: rgba(255, 255, 255, 0.06);
+
+  /* Scrollbar */
+  --scrollbar-track: rgba(3, 0, 20, 0.8);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
+  --scrollbar-border: rgba(3, 0, 20, 0.8);
+
+  /* Body background decoration */
+  --body-gradient-1: rgba(120, 119, 198, 0.2);
+  --body-gradient-2: rgba(99, 102, 241, 0.05);
+  --body-gradient-3: rgba(236, 72, 153, 0.03);
+
+  /* Code block */
+  --code-bg: rgba(5, 2, 20, 0.7);
+  --code-border: rgba(255, 255, 255, 0.05);
+
+  /* Notification / Glass panel */
+  --panel-bg: #060417;
+  --panel-border: rgba(255, 255, 255, 0.1);
+
+  /* Grid / dot background patterns */
+  --grid-line: rgba(255, 255, 255, 0.02);
+  --dot-color: rgba(255, 255, 255, 0.04);
 }
 
-/* Base resets & layouts */
+/* ─────────────────────────────────────────────────
+   LIGHT THEME
+   Applied by ThemeProvider when the user picks Light.
+   High-contrast WCAG AA compliant token set.
+   Background: clean white-slate, text: deep navy.
+───────────────────────────────────────────────── */
+[data-theme="light"] {
+  /* Core surface colours — white canvas with warm depth */
+  --background: #f1f0fe;
+  --foreground: #0f0c29;
+  --surface-primary: #ffffff;
+  --surface-secondary: #eceaff;
+  --surface-card: rgba(255, 255, 255, 0.95);
+  --surface-overlay: rgba(241, 240, 254, 0.98);
+
+  /* Borders — clearly visible indigo tint */
+  --border-subtle: rgba(99, 102, 241, 0.18);
+  --border-medium: rgba(99, 102, 241, 0.28);
+  --border-glow: 0 0 12px rgba(99, 102, 241, 0.15);
+  --card-border: rgba(99, 102, 241, 0.2);
+
+  /* Text — deep navy hierarchy for strong contrast */
+  --text-primary: #1a1740;
+  --text-secondary: #3d3a5c;
+  --text-muted: #6360a0;
+  --text-placeholder: #9896c0;
+
+  /* Inputs — solid light-purple tinted surfaces */
+  --input-bg: #f7f6ff;
+  --input-border: rgba(99, 102, 241, 0.3);
+  --input-focus: rgba(99, 102, 241, 0.55);
+  --hover-bg: rgba(99, 102, 241, 0.07);
+  --hover-bg-strong: rgba(99, 102, 241, 0.12);
+
+  /* Glassmorphism — solid opaque so content is never washed out */
+  --card-glass: rgba(255, 255, 255, 0.92);
+  --glass-blur: blur(16px);
+  --primary-glow: radial-gradient(rgba(99, 102, 241, 0.1), rgba(255, 255, 255, 0));
+  --secondary-glow: linear-gradient(to bottom right, rgba(139, 92, 246, 0.08), rgba(236, 72, 153, 0.03));
+
+  /* Scrollbar */
+  --scrollbar-track: #eceaff;
+  --scrollbar-thumb: rgba(99, 102, 241, 0.3);
+  --scrollbar-thumb-hover: rgba(99, 102, 241, 0.5);
+  --scrollbar-border: #eceaff;
+
+  /* Body background gradients */
+  --body-gradient-1: rgba(99, 102, 241, 0.1);
+  --body-gradient-2: rgba(139, 92, 246, 0.05);
+  --body-gradient-3: rgba(236, 72, 153, 0.03);
+
+  /* Code block */
+  --code-bg: #eceaff;
+  --code-border: rgba(99, 102, 241, 0.2);
+
+  /* Notification / Glass panel */
+  --panel-bg: #ffffff;
+  --panel-border: rgba(99, 102, 241, 0.2);
+
+  /* Grid / dot background patterns */
+  --grid-line: rgba(99, 102, 241, 0.06);
+  --dot-color: rgba(99, 102, 241, 0.07);
+}
+
+/* ─────────────────────────────────────────────────
+   BASE RESETS & LAYOUT
+───────────────────────────────────────────────── */
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   overflow-x: hidden;
-  background-image: 
-    radial-gradient(ellipse 80% 80% at 50% -20%, rgba(120, 119, 198, 0.2), rgba(255, 255, 255, 0)),
-    radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05), transparent),
-    radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.03), transparent);
+  background-image:
+    radial-gradient(ellipse 80% 80% at 50% -20%, var(--body-gradient-1), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at 10% 20%, var(--body-gradient-2), transparent),
+    radial-gradient(circle at 90% 80%, var(--body-gradient-3), transparent);
   background-attachment: fixed;
+  /* Smooth transition when theme changes */
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Custom premium scrollbar */
+/* ─────────────────────────────────────────────────
+   CUSTOM PREMIUM SCROLLBAR
+───────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(3, 0, 20, 0.8);
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-thumb);
   border-radius: 9999px;
-  border: 2px solid rgba(3, 0, 20, 0.8);
+  border: 2px solid var(--scrollbar-border);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb-hover);
 }
 
-/* Sleek glassmorphic container styles */
+/* ─────────────────────────────────────────────────
+   GLASSMORPHIC CONTAINER STYLES
+───────────────────────────────────────────────── */
 .glass-panel {
   background: var(--card-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--card-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
 }
 
 .glass-panel-hover:hover {
   border-color: rgba(99, 102, 241, 0.25);
-  box-shadow: 
-    0 8px 32px 0 rgba(0, 0, 0, 0.4),
+  box-shadow:
+    0 8px 32px 0 rgba(0, 0, 0, 0.15),
     0 0 15px rgba(99, 102, 241, 0.1);
-  background: rgba(13, 9, 36, 0.7);
+  background: var(--surface-card);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Animated glow background grids */
+/* ─────────────────────────────────────────────────
+   ANIMATED GLOW BACKGROUND GRIDS
+───────────────────────────────────────────────── */
 .grid-bg {
   background-size: 40px 40px;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
 }
 
 .dot-bg {
   background-size: 24px 24px;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
 }
 
-/* Custom modern animated gradients */
+/* ─────────────────────────────────────────────────
+   TEXT GRADIENT UTILITIES
+───────────────────────────────────────────────── */
 .text-gradient {
   background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme="light"] .text-gradient {
+  background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #6366f1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -105,6 +241,9 @@ body {
   background-clip: text;
 }
 
+/* ─────────────────────────────────────────────────
+   BUTTON GLOW EFFECTS
+───────────────────────────────────────────────── */
 .btn-glowing {
   position: relative;
   overflow: hidden;
@@ -128,7 +267,9 @@ body {
   opacity: 1;
 }
 
-/* Custom animation keyframes */
+/* ─────────────────────────────────────────────────
+   ANIMATION KEYFRAMES
+───────────────────────────────────────────────── */
 @keyframes pulseGlow {
   0%, 100% {
     opacity: 0.3;
@@ -157,19 +298,135 @@ body {
   animation: gridScroll 10s linear infinite;
 }
 
-/* Custom code block styling */
+/* ─────────────────────────────────────────────────
+   CODE BLOCK STYLING
+───────────────────────────────────────────────── */
 pre {
-  background: rgba(5, 2, 20, 0.7) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--code-bg) !important;
+  border: 1px solid var(--code-border);
   border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;
 }
 
-/* Hide Clerk Dev Badge */
-.cl-internal-b3al6g, 
+/* ─────────────────────────────────────────────────
+   INPUT PLACEHOLDER COLOUR
+   Placeholder colour cannot be set via inline styles,
+   so we handle it here using the CSS token.
+───────────────────────────────────────────────── */
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-placeholder);
+  opacity: 1;
+}
+
+/* Input focus ring — uses token so it respects theme */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--input-focus) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* ─────────────────────────────────────────────────
+   HIDE CLERK DEV BADGE
+───────────────────────────────────────────────── */
+.cl-internal-b3al6g,
 .cl-devMode,
 .cl-internal-phfxlr,
 div:has(> .cl-devMode) {
   display: none !important;
 }
+
+/* ─────────────────────────────────────────────────
+   THEME TRANSITION — applied to all key surfaces
+   so the switch feels polished and smooth.
+───────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.25s;
+  transition-timing-function: ease;
+}
+
+/* ─────────────────────────────────────────────────
+   LIGHT THEME — GLOBAL UTILITY OVERRIDES
+   These selectors override the most common dark-only
+   Tailwind utilities used across dashboard pages so
+   individual pages don't need manual colour fixes.
+───────────────────────────────────────────────── */
+
+/* ── Text colours ───────────────────────────── */
+[data-theme="light"] .text-white,
+[data-theme="light"] .text-slate-100,
+[data-theme="light"] .text-slate-200 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .text-slate-300,
+[data-theme="light"] .text-slate-400 {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="light"] .text-slate-500,
+[data-theme="light"] .text-slate-600 {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="light"] .placeholder-slate-500::placeholder {
+  color: var(--text-placeholder) !important;
+}
+
+/* ── Background colours — white-fraction utilities ─ */
+[data-theme="light"] .bg-\[\#030014\],
+[data-theme="light"] .bg-\[\#040212\]\/50,
+[data-theme="light"] .bg-\[\#060417\],
+[data-theme="light"] .bg-\[\#060417\]\/50,
+[data-theme="light"] .bg-\[\#08051e\]\/40,
+[data-theme="light"] .bg-\[\#08051e\]\/20,
+[data-theme="light"] .bg-\[\#0a071a\]\/50,
+[data-theme="light"] .bg-\[\#0a0728\]\/10,
+[data-theme="light"] .bg-\[\#080521\] {
+  background-color: var(--surface-card) !important;
+}
+
+/* Generic white-fraction backgrounds */
+[data-theme="light"] [class*="bg-white/"] {
+  background-color: var(--hover-bg) !important;
+}
+
+/* ── Border colours ─────────────────────────── */
+[data-theme="light"] .border-white\/5,
+[data-theme="light"] .border-white\/10,
+[data-theme="light"] .border-white\/20 {
+  border-color: var(--border-subtle) !important;
+}
+
+/* Generic white-fraction borders */
+[data-theme="light"] [class*="border-white/"] {
+  border-color: var(--border-subtle) !important;
+}
+
+/* ── Timeline vertical line (before pseudo-element) ─ */
+[data-theme="light"] .before\:bg-white\/5::before {
+  background-color: var(--border-medium) !important;
+}
+
+/* ── Chat / Mentor input area ───────────────── */
+[data-theme="light"] .bg-\[\#030014\]\/40 {
+  background-color: var(--surface-secondary) !important;
+}
+
+/* ── Recharts tooltip ───────────────────────── */
+[data-theme="light"] .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: var(--surface-primary) !important;
+  border-color: var(--border-medium) !important;
+}
+
+/* ── Code block header background ───────────── */
+[data-theme="light"] .bg-\[\#050214\] {
+  background-color: var(--surface-secondary) !important;
+}
+
