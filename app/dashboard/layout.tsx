@@ -1,15 +1,16 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
-import {
-  Bell,
-  Search,
-  Menu,
-  X,
-  Compass,
-  Sun,
-  Moon,
+import { CommandPalette } from '@/components/dashboard/CommandPalette';
+import { 
+  Bell, 
+  Search, 
+  Menu, 
+  X, 
+  Compass, 
+  Sun, 
+  Moon, 
   ChevronDown,
   Sparkles,
   Award
@@ -30,8 +31,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, careerScore, syncUserProfile } = useAppStore();
+  const { user, careerScore, projects, selectProject, syncUserProfile } = useAppStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+ const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -50,7 +52,7 @@ export default function DashboardLayout({
       try {
         const dbProfile = await getCurrentUserProfile();
 
-        // Build Clerk identity fields — always real, always available once loaded
+        // Build Clerk identity fields â€” always real, always available once loaded
         const clerkIdentity = clerkUser ? {
           fullName:
             clerkUser.fullName ||
@@ -70,7 +72,7 @@ export default function DashboardLayout({
             imageUrl: clerkIdentity?.imageUrl || dbProfile.imageUrl,
           });
         } else if (clerkIdentity) {
-          // DB returned null (not yet synced) — use Clerk identity only
+          // DB returned null (not yet synced) â€” use Clerk identity only
           syncUserProfile({
             fullName: clerkIdentity.fullName,
             email: clerkIdentity.email,
@@ -206,6 +208,19 @@ export default function DashboardLayout({
           {/* Top Actions: Search, Theme, Notify, Profile */}
           <div className="flex items-center space-x-6">
             {/* Search Input */}
+{/* Functional global command search */}
+<button
+  type="button"
+  onClick={() => setCommandPaletteOpen(true)}
+  className="hidden sm:flex items-center gap-3 h-10 min-w-52 lg:min-w-64 px-3 rounded-xl border border-white/10 bg-white/[0.03] text-slate-400 hover:text-white hover:border-indigo-400/30 hover:bg-indigo-500/5 transition-colors"
+  aria-label="Open global search"
+>
+  <Search className="w-4 h-4" />
+  <span className="text-xs flex-1 text-left">Search pages and projects...</span>
+  <kbd className="hidden lg:inline-flex rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] text-slate-500">
+    Ctrl K
+  </kbd>
+</button>
             <div className="relative w-64">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
@@ -364,9 +379,16 @@ export default function DashboardLayout({
 
         {/* Main Dashboard Pages Slot (Children content) */}
         <div className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto relative z-10">
-          {children}
+          <CommandPalette
+  open={commandPaletteOpen}
+  onOpenChange={setCommandPaletteOpen}
+  projects={projects}
+  onProjectSelect={selectProject}
+/>
+{children}
         </div>
       </div>
     </div>
   );
 }
+
