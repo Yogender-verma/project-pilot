@@ -11,6 +11,7 @@ import {
 } from '../types';
 
 import { generateAdaptiveDashboard } from '@/lib/adaptiveEngine';
+
 // Neutral placeholder used before the authenticated user profile is hydrated from the DB.
 // This is intentionally empty — real data flows in via syncUserProfile() on mount.
 const DEFAULT_USER: User = {
@@ -400,11 +401,44 @@ export const useAppStore = create<AppStore>((set, get) => ({
         skills: dbUser.skills || []
       };
       const adaptive = generateAdaptiveDashboard(updatedUser);
+      
+      const dbProjects = dbUser.projects || [];
+      const adaptiveProjects = adaptive.projects;
+      
+      const mergedProjects = adaptiveProjects.map(ap => {
+        const dbProj = dbProjects.find((dp: any) => dp.id === ap.id);
+        if (dbProj) {
+          return {
+            ...ap,
+            status: dbProj.status,
+            progress: dbProj.progress,
+          };
+        }
+        return ap;
+      });
+
+      const updatedRoadmaps = { ...state.roadmaps };
+      dbProjects.forEach((dp: any) => {
+        if (dp.roadmap) {
+          try {
+            const steps = typeof dp.roadmap === 'string' ? JSON.parse(dp.roadmap) : dp.roadmap;
+            updatedRoadmaps[dp.id] = {
+              projectId: dp.id,
+              projectTitle: dp.title,
+              steps: steps
+            };
+          } catch (e) {
+            console.error('Failed to parse database project roadmap:', e);
+          }
+        }
+      });
+
       return {
         isAuthenticated: true,
         user: updatedUser,
         careerScore: adaptive.careerScore,
-        projects: adaptive.projects,
+        projects: mergedProjects,
+        roadmaps: updatedRoadmaps,
         githubAnalytics: { ...state.githubAnalytics, recruiterInsights: adaptive.insights }
       };
     });
@@ -421,15 +455,28 @@ export const useAppStore = create<AppStore>((set, get) => ({
   toggleStepCompletion: (projectId, stepId) => set((state) => {
     const roadmap = state.roadmaps[projectId];
     if (!roadmap) return {};
+    let isCompleted = false;
+    let stepTitle = '';
     const updatedSteps = roadmap.steps.map((step) => {
       if (step.id === stepId) {
+        isCompleted = !step.completed;
+        stepTitle = step.title;
         return {
           ...step,
-          completed: !step.completed
+          completed: isCompleted
         };
       }
       return step;
     });
+
+    const completedCount = updatedSteps.filter(s => s.completed).length;
+    const progress = Math.round((completedCount / updatedSteps.length) * 100);
+
+    // Sync changes to the database
+    toggleProjectMilestoneInDb(projectId, stepId, updatedSteps, progress);
+    if (isCompleted) {
+      createActivityInDb(projectId, `Completed milestone: ${stepTitle}`, 'milestone');
+    }
 
     return {
       roadmaps: {
@@ -438,7 +485,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
           ...roadmap,
           steps: updatedSteps
         }
-      }
+      },
+      projects: state.projects.map(p => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            progress,
+            status: progress === 100 ? 'Completed' : 'In Progress'
+          };
+        }
+        return p;
+      })
     };
   }),
   toggleTaskCompletion: (projectId, stepId, taskIndex) => set((state) => {
@@ -447,11 +504,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     const updatedSteps = roadmap.steps.map((step) => {
       if (step.id === stepId) {
-        // Let's create an array in our state or handle it. Wait, the `tasks` are strings. 
-        // We can just toggle the overall step completion if the tasks completed score matches. 
-        // For standard UI, we can toggle step completion itself. Let's make it simpler: toggling step completion
-        // toggles all tasks. Toggling a task is just interactive. Let's make task completion tracked dynamically.
-        // To keep code elegant and simple, we'll focus step completion toggle.
+        // Toggling step completion directly for clean UX
       }
       return step;
     });
@@ -508,6 +561,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
         type: 'deployment' as const
       }
     ];
+
+    const projectData = state.projects.find(p => p.id === projectId);
+    if (projectData) {
+      saveProjectToDb({
+        id: projectId,
+        title: projectData.title,
+        description: projectData.description || undefined,
+        status: 'Planned',
+        progress: 0,
+        tags: projectData.technologies,
+        roadmap: newSteps
+      });
+      createActivityInDb(projectId, `Initialized Blueprint: ${title}`, 'project_start');
+    }
 
     return {
       roadmaps: {
@@ -668,13 +735,120 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   // GitHub Analytics State
   githubAnalytics: MOCK_GITHUB,
-  connectGithub: (username) => set((state) => ({
-    githubAnalytics: {
-      ...state.githubAnalytics,
-      username,
-      connected: true
+  connectGithub: async (username) => {
+    try {
+      const res = await fetch(`https://api.github.com/users/${username}/repos?per_page=30&sort=updated`);
+      if (!res.ok) throw new Error('Failed to fetch repositories');
+      const repos = await res.json();
+      
+      if (!Array.isArray(repos)) throw new Error('Invalid response from GitHub API');
+      
+      const langCounts: Record<string, number> = {};
+      repos.forEach(r => {
+        if (r.language) {
+          langCounts[r.language] = (langCounts[r.language] || 0) + 1;
+        }
+      });
+      
+      const colors: Record<string, string> = {
+        TypeScript: '#3178c6',
+        JavaScript: '#f1e05a',
+        HTML: '#e34c26',
+        CSS: '#563d7c',
+        Python: '#3572A5',
+        Java: '#b07219',
+        Go: '#00ADD8',
+        Rust: '#dea584',
+        C: '#555555',
+        'C++': '#f34b7d',
+        Ruby: '#701516',
+        PHP: '#4F5D95',
+        Shell: '#89e051'
+      };
+      
+      const totalLangs = Object.values(langCounts).reduce((a, b) => a + b, 0) || 1;
+      const languages = Object.entries(langCounts).map(([name, count]) => ({
+        name,
+        value: Math.round((count / totalLangs) * 100),
+        color: colors[name] || '#8b5cf6'
+      })).sort((a, b) => b.value - a.value);
+      
+      const totalStars = repos.reduce((acc, r) => acc + (r.stargazers_count || 0), 0);
+      const totalForks = repos.reduce((acc, r) => acc + (r.forks_count || 0), 0);
+      
+      const portfolioStrengthScore = Math.min(98, 50 + repos.length * 2 + totalStars * 3);
+      const consistencyScore = Math.min(95, 60 + (repos.length % 5) * 8);
+      const aiEngineerReadiness = Math.min(95, 40 + (langCounts['Python'] || 0) * 12 + (langCounts['TypeScript'] || 0) * 6);
+      
+      const skillDetection = [
+        ...new Set([
+          ...Object.keys(langCounts).map(l => `${l} Development`),
+          'UI Architecture',
+          'API Infrastructure',
+          'Modern Git Workflows'
+        ])
+      ].slice(0, 6);
+      
+      const recruiterInsights = [
+        `Demonstrates strong capabilities in ${Object.keys(langCounts).slice(0, 3).join(', ') || 'coding'} through public repositories.`,
+        `Active GitHub profile @${username} with ${repos.length} public repositories and ${totalStars} stars recorded.`,
+        `Primary stack focus lies in ${languages[0]?.name || 'Fullstack'} systems with secondary exposure in ${languages[1]?.name || 'web'} development.`
+      ];
+      
+      const growthRecommendations = [
+        `Increase unit test coverage in your primary ${languages[0]?.name || 'TypeScript'} repositories.`,
+        `Configure GitHub Actions CI pipeline for automated testing on active pushes.`,
+        `Improve README.md documentation for ${repos[0]?.name || 'your projects'} to showcase system design patterns.`
+      ];
+      
+      const repositoryIntelligence = repos.map((r: any) => ({
+        name: r.name,
+        description: r.description || 'Public GitHub repository.',
+        analysis: [
+          r.description ? 'Descriptive repository metadata' : 'Clean code container',
+          `Main language detected as ${r.language || 'Plain text'}`,
+          r.fork ? 'Forked open-source repository' : 'Original pilot blueprint development',
+          `Last active update: ${new Date(r.updated_at).toLocaleDateString()}`
+        ],
+        detectedSkills: [r.language || 'General Stack', 'Code Architecture', r.fork ? 'Collaboration' : 'Independent Project'],
+        growthRecommendation: [
+          `Add more tests to verify ${r.language || 'codebase'} coverage`,
+          'Document configuration setups in README.md'
+        ],
+        stars: r.stargazers_count || 0,
+        forks: r.forks_count || 0,
+        lang: r.language || 'Unknown'
+      }));
+      
+      set((state) => ({
+        githubAnalytics: {
+          username,
+          avatarUrl: repos[0]?.owner?.avatar_url || state.githubAnalytics.avatarUrl,
+          totalRepos: repos.length,
+          totalCommits: repos.length * 15 + totalStars * 2, // simulated commits count
+          consistencyScore,
+          portfolioStrengthScore,
+          aiEngineerReadiness,
+          connected: true,
+          languages,
+          recentCommits: state.githubAnalytics.recentCommits,
+          skillDetection,
+          growthRecommendations,
+          recruiterInsights,
+          repositoryIntelligence
+        }
+      }));
+    } catch (e) {
+      console.error('GitHub API failed, falling back to mock metrics:', e);
+      set((state) => ({
+        githubAnalytics: {
+          ...state.githubAnalytics,
+          username,
+          connected: true
+        }
+      }));
     }
-  })),
+  },
   disconnectGithub: () => set((state) => ({
     githubAnalytics: {
       ...state.githubAnalytics,

@@ -98,12 +98,21 @@ export async function getCurrentUserProfile() {
 
   try {
     return await prisma.user.findUnique({
-      where: { clerkId: userId }
+      where: { clerkId: userId },
+      include: {
+        projects: {
+          include: {
+            activities: {
+              orderBy: { createdAt: 'desc' }
+            }
+          }
+        }
+      }
     });
   } catch (error) {
     console.error('Failed to fetch user profile:', error);
     // Return null so callers can fall back to Clerk identity data.
-    // Do NOT return a fake 'Dev User' object \u2014 that causes dummy data to appear on the dashboard.
+    // Do NOT return a fake 'Dev User' object — that causes dummy data to appear on the dashboard.
     return null;
   }
 }

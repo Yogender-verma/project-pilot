@@ -59,12 +59,19 @@ export default function SettingsPage() {
     setTimeout(() => setResetSuccess(false), 2000);
   };
 
+  const [gitUsername, setGitUsername] = useState(githubAnalytics.username || '');
+  const [gitLoading, setGitLoading] = useState(false);
+
   // Toggle Git Connection
-  const handleToggleGithub = () => {
+  const handleToggleGithub = async () => {
     if (githubAnalytics.connected) {
       disconnectGithub();
+      setGitUsername('');
     } else {
-      connectGithub('devpilot-architect');
+      if (!gitUsername.trim()) return;
+      setGitLoading(true);
+      await connectGithub(gitUsername.trim());
+      setGitLoading(false);
     }
   };
 
@@ -232,28 +239,54 @@ export default function SettingsPage() {
 
               {/* GitHub integration status */}
               <div
-                className="p-4 rounded-xl border flex items-center justify-between text-xs sm:text-sm"
+                className="p-4 rounded-xl border flex flex-col gap-4 text-xs sm:text-sm"
                 style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
               >
-                <div className="flex items-center space-x-3.5">
-                  <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
-                    <Github className="w-5 h-5" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3.5">
+                    <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
+                      <Github className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>GitHub Crawlers</h4>
+                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        {githubAnalytics.connected ? `Synced: @${githubAnalytics.username}` : 'Disconnected'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>GitHub Crawlers</h4>
-                    <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      {githubAnalytics.connected ? `Synced: @${githubAnalytics.username}` : 'Disconnected'}
-                    </p>
-                  </div>
+                  {githubAnalytics.connected && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleToggleGithub}
+                      className="h-9 text-xs"
+                    >
+                      Disconnect
+                    </Button>
+                  )}
                 </div>
-                <Button
-                  variant={githubAnalytics.connected ? 'outline' : 'glow'}
-                  size="sm"
-                  onClick={handleToggleGithub}
-                  className="h-9 text-xs"
-                >
-                  {githubAnalytics.connected ? 'Disconnect' : 'Connect'}
-                </Button>
+
+                {!githubAnalytics.connected && (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter GitHub Username..."
+                      value={gitUsername}
+                      onChange={(e) => setGitUsername(e.target.value)}
+                      disabled={gitLoading}
+                      className="flex-1 bg-[#0a071a]/50 text-xs rounded-xl border border-white/10 px-3 py-2 focus:outline-none focus:border-indigo-500/55 text-slate-200"
+                    />
+                    <Button
+                      variant="glow"
+                      size="sm"
+                      onClick={handleToggleGithub}
+                      disabled={gitLoading || !gitUsername.trim()}
+                      className="h-9 text-xs px-4"
+                    >
+                      {gitLoading ? 'Connecting...' : 'Connect'}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* LinkedIn integration status */}

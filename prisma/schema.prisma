@@ -33,6 +33,7 @@ model Project {
   status      String     @default("Planned")
   progress    Int        @default(0)
   tags        String[]
+  roadmap     Json?
   userId      String
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   activities  Activity[]
