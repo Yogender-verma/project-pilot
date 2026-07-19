@@ -92,18 +92,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 rounded-lg border transition-colors cursor-pointer"
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-expanded={!collapsed}
+          className="p-1.5 rounded-lg border transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           style={{
             borderColor: 'var(--border-subtle)',
             color: 'var(--text-secondary)',
           }}
         >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          {collapsed ? <ChevronRight className="w-4 h-4" aria-hidden="true" /> : <ChevronLeft className="w-4 h-4" aria-hidden="true" />}
         </button>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto" aria-label="Main Navigation">
         {menuItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
           const Icon = item.icon;
@@ -112,8 +115,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
             <Link
               key={item.name}
               href={item.href}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex items-center space-x-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative',
+                'flex items-center space-x-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
                 isActive
                   ? 'bg-indigo-600/15 border border-indigo-500/20 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.05)]'
                   : 'border border-transparent'
@@ -121,6 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
               style={!isActive ? { color: 'var(--text-secondary)' } : {}}
             >
               <Icon
+                aria-hidden="true"
                 className={cn(
                   'w-5 h-5 shrink-0 transition-transform duration-200 group-hover:scale-105',
                   isActive ? 'text-indigo-400' : ''
@@ -135,6 +140,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
               {/* Tooltip for collapsed state */}
               {collapsed && (
                 <div
+                  role="tooltip"
                   className="absolute left-20 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-xl whitespace-nowrap z-50 border"
                   style={{
                     backgroundColor: 'var(--panel-bg)',
@@ -162,9 +168,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
           <div className="w-10 h-10 rounded-full overflow-hidden border border-indigo-500/30 flex items-center justify-center bg-indigo-500/10 shrink-0">
             {displayUser.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={displayUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              <img src={displayUser.avatarUrl} alt={`${displayUser.name}'s profile avatar`} className="w-full h-full object-cover" />
             ) : (
-              <UserIcon className="w-5 h-5 text-indigo-400" />
+              <UserIcon className="w-5 h-5 text-indigo-400" aria-hidden="true" />
             )}
           </div>
           {!collapsed && (
@@ -187,10 +193,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
         <button
           type="button"
           onClick={handleSignOut}
-          className="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium hover:text-rose-300 hover:bg-rose-500/5 transition-all duration-200 w-full group cursor-pointer"
+          aria-label="Sign out of account"
+          title="Sign out of account"
+          className="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium hover:text-rose-300 hover:bg-rose-500/5 transition-all duration-200 w-full group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           style={{ color: 'var(--text-secondary)' }}
         >
-          <LogOut className="w-5 h-5 shrink-0" />
+          <LogOut className="w-5 h-5 shrink-0" aria-hidden="true" />
           {!collapsed && <span>Sign Out</span>}
         </button>
       </div>

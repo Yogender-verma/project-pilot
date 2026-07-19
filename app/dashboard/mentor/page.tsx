@@ -281,13 +281,18 @@ export default function AiMentorChatPage() {
           )}
 
           <div className="relative">
+            <label htmlFor="mentor-chat-input" className="sr-only">
+              Ask AI Mentor for architectural guidelines
+            </label>
             <textarea
+              id="mentor-chat-input"
               placeholder="Ask AI Mentor for architectural guidelines..."
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyDown}
+              aria-label="Ask AI Mentor for architectural guidelines"
               rows={2}
-              className="w-full text-xs sm:text-sm rounded-2xl border p-4 pr-32 focus:outline-none resize-none glass-panel"
+              className="w-full text-xs sm:text-sm rounded-2xl border p-4 pr-32 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 resize-none glass-panel"
               style={{
                 backgroundColor: 'var(--input-bg)',
                 borderColor: 'var(--input-border)',
@@ -298,16 +303,22 @@ export default function AiMentorChatPage() {
             {/* Input Action tools (File attach & Send button) */}
             <div className="absolute right-4.5 bottom-4 flex items-center space-x-2">
               <button
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="p-2 hover:bg-white/5 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                aria-label="Attach code or context file"
+                title="Attach code or context file"
+                className="p-2 hover:bg-white/5 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
-                <Paperclip className="w-4 h-4" />
+                <Paperclip className="w-4 h-4" aria-hidden="true" />
               </button>
               <Button
+                type="button"
                 variant="premium"
                 size="sm"
                 onClick={handleSend}
-                className="h-10 px-4 text-xs font-semibold"
+                aria-label="Send message to AI mentor"
+                title="Send message to AI mentor"
+                className="h-10 px-4 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 rightIcon={<CornerDownLeft className="w-4.5 h-4.5" />}
               >
                 Send

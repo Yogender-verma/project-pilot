@@ -194,19 +194,20 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
                 type="button"
                 onClick={onClose}
                 aria-label="Close navigation drawer"
-                className="p-2 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95"
+                title="Close navigation drawer"
+                className="p-2 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 style={{
                   borderColor: 'var(--border-subtle)',
                   color: 'var(--text-secondary)',
                   backgroundColor: 'var(--hover-bg)',
                 }}
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </motion.div>
 
             {/* Middle Navigation Links (Evenly Distributed Across Entire Height) */}
-            <nav className="flex-1 px-4 py-4 flex flex-col justify-between overflow-y-auto overscroll-contain">
+            <nav className="flex-1 px-4 py-4 flex flex-col justify-between overflow-y-auto overscroll-contain" aria-label="Mobile Drawer Navigation">
               {menuItems.map((item) => {
                 const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
                 const Icon = item.icon;
@@ -216,8 +217,9 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
                     <Link
                       href={item.href}
                       onClick={onClose}
+                      aria-current={isActive ? 'page' : undefined}
                       className={cn(
-                        'flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-sm sm:text-base font-bold transition-all duration-200 group relative w-full',
+                        'flex items-center space-x-3.5 px-4 py-3.5 rounded-2xl text-sm sm:text-base font-bold transition-all duration-200 group relative w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
                         isActive
                           ? 'bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.12)]'
                           : 'border border-transparent hover:bg-indigo-500/10'
@@ -225,6 +227,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
                       style={!isActive ? { color: 'var(--text-secondary)' } : {}}
                     >
                       <Icon
+                        aria-hidden="true"
                         className={cn(
                           'w-5 h-5 shrink-0 transition-transform duration-200 group-hover:scale-110',
                           isActive ? 'text-indigo-400' : ''
@@ -248,7 +251,9 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="flex items-center justify-between px-4 py-3 rounded-2xl border text-xs sm:text-sm font-semibold w-full cursor-pointer transition-all hover:bg-indigo-500/5 active:scale-95"
+                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+                className="flex items-center justify-between px-4 py-3 rounded-2xl border text-xs sm:text-sm font-semibold w-full cursor-pointer transition-all hover:bg-indigo-500/5 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 style={{
                   borderColor: 'var(--border-subtle)',
                   color: 'var(--text-secondary)',
