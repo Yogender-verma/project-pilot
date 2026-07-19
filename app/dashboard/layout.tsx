@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { MobileDrawer } from '@/components/layout/MobileDrawer';
 import { CommandPalette } from '@/components/dashboard/CommandPalette';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { 
@@ -135,150 +136,217 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto h-screen relative">
         {/* Mobile Header (Topbar for small viewports) */}
         <header
-          className="md:hidden flex items-center justify-between h-16 px-4 border-b sticky top-0 z-40"
+          className="md:hidden flex items-center justify-between min-h-[84px] py-4 px-6 border-b sticky top-0 z-40 backdrop-blur-xl"
           style={{
-            backgroundColor: 'var(--surface-primary)',
+            backgroundColor: 'color-mix(in srgb, var(--surface-primary) 90%, transparent)',
             borderColor: 'var(--border-subtle)',
           }}
         >
-          <Link href="/dashboard" className="flex items-center space-x-2">
-            <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400">
-              <Compass className="w-4 h-4" />
+          <Link href="/dashboard" className="flex items-center space-x-3 group">
+            <div className="p-2.5 bg-indigo-500/15 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-md">
+              <Compass className="w-6 h-6" />
             </div>
-            <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>PilotAI</span>
+            <span
+              className="text-lg font-extrabold tracking-wider select-none"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              Pilot<span className="text-indigo-400">AI</span>
+            </span>
           </Link>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             {/* Mobile theme toggle */}
             <button
+              type="button"
               onClick={toggleTheme}
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-              className="p-1.5 rounded-lg transition-colors cursor-pointer"
+              className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
               style={{
+                borderColor: 'var(--border-subtle)',
                 color: 'var(--text-secondary)',
-                backgroundColor: 'transparent',
+                backgroundColor: 'var(--hover-bg)',
               }}
             >
               {theme === 'dark'
-                ? <Sun className="w-4 h-4 text-amber-400" />
-                : <Moon className="w-4 h-4 text-indigo-400" />
+                ? <Sun className="w-5 h-5 text-amber-400" />
+                : <Moon className="w-5 h-5 text-indigo-400" />
               }
             </button>
-            <NotificationCenter mobile />
+
+            {/* Mobile Notifications button */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 rounded-lg transition-colors cursor-pointer"
-              style={{ color: 'var(--text-secondary)' }}
+              type="button"
+              onClick={() => setShowNotifications(!showNotifications)}
+              aria-label="Toggle notifications"
+              className="p-3 rounded-2xl border transition-all cursor-pointer relative hover:scale-105 active:scale-95 shadow-sm"
+              style={{
+                borderColor: 'var(--border-subtle)',
+                color: 'var(--text-secondary)',
+                backgroundColor: 'var(--hover-bg)',
+              }}
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full ring-2 ring-indigo-400/30" />
+            </button>
+
+            {/* Mobile Menu (Hamburger) button */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Open navigation drawer"
+              className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
+              style={{
+                borderColor: 'var(--border-subtle)',
+                color: 'var(--text-secondary)',
+                backgroundColor: 'var(--hover-bg)',
+              }}
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </header>
 
         {/* Global Desktop Workspace Topbar */}
         <header
-          className="hidden md:flex items-center justify-between h-20 px-8 border-b sticky top-0 backdrop-blur-md z-30"
+          className="hidden md:flex items-center justify-between min-h-[88px] py-4 px-8 border-b sticky top-0 backdrop-blur-xl z-30 shadow-sm"
           style={{
-            backgroundColor: 'color-mix(in srgb, var(--background) 60%, transparent)',
+            backgroundColor: 'color-mix(in srgb, var(--surface-primary) 90%, transparent)',
             borderColor: 'var(--border-subtle)',
           }}
         >
           <div className="flex items-center space-x-4">
-            <h1 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+            <h1 className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>
               {getPageTitle()}
             </h1>
-            <Badge variant="glow" className="text-[10px] font-bold uppercase tracking-wider">
+            <Badge variant="glow" className="text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full border border-indigo-500/30">
               Ready Score: {careerScore.overallScore}%
             </Badge>
           </div>
 
           {/* Top Actions: Search, Theme, Notify, Profile */}
-          <div className="flex items-center space-x-6">
-            {/* Search Input */}
-{/* Functional global command search */}
-<button
-  type="button"
-  onClick={() => setCommandPaletteOpen(true)}
-  className="hidden sm:flex items-center gap-3 h-10 min-w-52 lg:min-w-64 px-3 rounded-xl border border-white/10 bg-white/[0.03] text-slate-400 hover:text-white hover:border-indigo-400/30 hover:bg-indigo-500/5 transition-colors"
-  aria-label="Open global search"
->
-  <Search className="w-4 h-4" />
-  <span className="text-xs flex-1 text-left">Search pages and projects...</span>
-  <kbd className="hidden lg:inline-flex rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] text-slate-500">
-    Ctrl K
-  </kbd>
-</button>
-
+          <div className="flex items-center space-x-4">
+            {/* Functional global command search */}
+            <button
+              type="button"
+              onClick={() => setCommandPaletteOpen(true)}
+              className="hidden sm:flex items-center gap-3.5 h-11 min-w-60 lg:min-w-72 px-4 rounded-2xl border transition-all cursor-pointer hover:border-indigo-500/40 hover:bg-indigo-500/5 shadow-sm"
+              style={{
+                borderColor: 'var(--border-subtle)',
+                backgroundColor: 'var(--hover-bg)',
+                color: 'var(--text-secondary)',
+              }}
+              aria-label="Open global search"
+            >
+              <Search className="w-4.5 h-4.5 text-indigo-400 shrink-0" />
+              <span className="text-xs font-medium flex-1 text-left">Search pages and projects...</span>
+              <kbd className="hidden lg:inline-flex rounded-lg border border-white/10 bg-white/10 px-2 py-0.5 text-[11px] font-mono text-slate-400">
+                Ctrl K
+              </kbd>
+            </button>
 
             {/* AI Career readiness Quick Summary Widget */}
             <Link
               href="/dashboard/career"
-              className="flex items-center space-x-2 p-1.5 px-3 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-xs font-semibold text-indigo-400 hover:bg-indigo-500/15 transition-all"
+              className="flex items-center space-x-2.5 px-4 py-2.5 bg-indigo-500/10 rounded-2xl border border-indigo-500/25 text-xs font-bold text-indigo-400 hover:bg-indigo-500/15 transition-all shadow-sm"
             >
               <Award className="w-4 h-4 animate-bounce" />
               <span>Career Score: {careerScore.overallScore}%</span>
             </Link>
 
-            {/*
-             * Theme Switcher Toggle
-             * Wired to useTheme().toggleTheme() — every click persists to
-             * localStorage and flips the data-theme attribute on <html>.
-             */}
+            {/* Theme Switcher Toggle */}
             <button
               onClick={toggleTheme}
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-              className="p-2 rounded-xl border transition-colors cursor-pointer"
+              className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
               style={{
                 borderColor: 'var(--border-subtle)',
                 color: 'var(--text-secondary)',
+                backgroundColor: 'var(--hover-bg)',
               }}
             >
               {theme === 'dark'
-                ? <Sun className="w-4 h-4 text-amber-400" />
-                : <Moon className="w-4 h-4 text-indigo-400" />
+                ? <Sun className="w-5 h-5 text-amber-400" />
+                : <Moon className="w-5 h-5 text-indigo-400" />
               }
             </button>
 
-            {/* Authenticated notification center */}
-            <NotificationCenter />
+            {/* Notifications panel trigger */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-3 rounded-2xl border transition-all cursor-pointer relative hover:scale-105 active:scale-95 shadow-sm"
+                style={{
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-secondary)',
+                  backgroundColor: 'var(--hover-bg)',
+                }}
+              >
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full ring-2 ring-indigo-400/30" />
+              </button>
+
+              <AnimatePresence>
+                {showNotifications && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-3 w-80 rounded-2xl p-4 shadow-2xl z-50 glass-panel"
+                    style={{
+                      backgroundColor: 'var(--panel-bg)',
+                      borderColor: 'var(--panel-border)',
+                    }}
+                  >
+                    <div
+                      className="flex items-center justify-between pb-3 mb-3"
+                      style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                    >
+                      <h4
+                        className="text-xs font-bold uppercase tracking-wider"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
+                        Notifications
+                      </h4>
+                      <button
+                        className="text-[10px] text-indigo-400 font-semibold hover:underline cursor-pointer"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          className="p-2.5 rounded-xl border border-transparent hover:border-indigo-500/10 transition-all text-xs"
+                          style={{ backgroundColor: 'var(--hover-bg)' }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`font-semibold ${n.unread ? 'text-indigo-400' : ''}`}
+                              style={!n.unread ? { color: 'var(--text-secondary)' } : {}}
+                            >
+                              {n.title}
+                            </span>
+                            {n.unread && <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />}
+                          </div>
+                          <span
+                            className="text-[10px] mt-1 block"
+                            style={{ color: 'var(--text-muted)' }}
+                          >
+                            {n.time}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </header>
 
-        {/* Mobile Dropdown Menu Drawer Overlay */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden w-full border-b p-4 z-40 relative flex flex-col space-y-2 glass-panel"
-              style={{ borderColor: 'var(--border-subtle)' }}
-            >
-              {[
-                { name: 'Dashboard', href: '/dashboard' },
-                { name: 'Projects', href: '/dashboard/projects' },
-                { name: 'Roadmaps', href: '/dashboard/roadmaps' },
-                { name: 'AI Mentor', href: '/dashboard/mentor' },
-                { name: 'GitHub Analytics', href: '/dashboard/github' },
-                { name: 'Career Score', href: '/dashboard/career' },
-                { name: 'Settings', href: '/dashboard/settings' }
-              ].map((m) => (
-                <Link
-                  key={m.name}
-                  href={m.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-xl text-xs font-semibold ${pathname === m.href
-                      ? 'bg-indigo-600/10 border border-indigo-500/20 text-indigo-400'
-                      : ''
-                    }`}
-                  style={pathname !== m.href ? { color: 'var(--text-secondary)' } : {}}
-                >
-                  {m.name}
-                </Link>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Mobile Sidebar Navigation Drawer */}
+        <MobileDrawer isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
 
         {/* Main Dashboard Pages Slot (Children content) */}
         <div className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto relative z-10">

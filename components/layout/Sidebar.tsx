@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
     >
       {/* Brand Header */}
       <div
-        className="flex items-center justify-between h-20 px-6 border-b"
+        className="flex items-center justify-between min-h-[88px] py-4 px-6 border-b"
         style={{ borderColor: 'var(--border-subtle)' }}
       >
         <Link href="/dashboard" className="flex items-center space-x-3 group overflow-hidden">
