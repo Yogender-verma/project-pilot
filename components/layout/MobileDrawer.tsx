@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useClerk, useUser } from '@clerk/nextjs';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
@@ -279,8 +280,14 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
               >
                 <div className="w-9.5 h-9.5 rounded-full overflow-hidden border border-indigo-500/30 flex items-center justify-center bg-indigo-500/10 shrink-0">
                   {displayUser.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={displayUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    <Image
+                      src={displayUser.avatarUrl}
+                      alt={`${displayUser.name}'s profile avatar`}
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-cover"
+                      unoptimized={displayUser.avatarUrl.startsWith('data:') || displayUser.avatarUrl.startsWith('blob:')}
+                    />
                   ) : (
                     <UserIcon className="w-4.5 h-4.5 text-indigo-400" />
                   )}
