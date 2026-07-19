@@ -46,25 +46,6 @@ export interface Project {
   liveUrl?: string;
 }
 
-export type ProjectActivityType =
-  | 'project_created'
-  | 'project_updated'
-  | 'status_changed'
-  | 'progress_updated'
-  | 'milestone'
-  | 'project_start'
-  | 'archived'
-  | 'restored';
-
-export interface ProjectActivity {
-  id: string;
-  type: ProjectActivityType | string;
-  description: string;
-  projectId: string;
-  projectTitle?: string;
-  createdAt: string;
-}
-
 export interface RoadmapStep {
   id: string;
   title: string;
@@ -144,4 +125,24 @@ export interface CareerScore {
   missingSkills: { name: string; importance: 'High' | 'Medium' | 'Low'; category: string }[];
   improvements: string[];
   resumeScore: number;
+}
+
+
+export type NotificationType =
+  | 'deadline_approaching'
+  | 'deadline_missed'
+  | 'project_stalled'
+  | 'milestone_completed'
+  | 'project_completed'
+  | 'career_milestone_due';
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  link?: string | null;
+  projectId?: string | null;
+  createdAt: string;
 }

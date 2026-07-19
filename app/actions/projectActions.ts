@@ -2,6 +2,7 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { createUserNotification } from '@/app/actions/notificationActions';
 
 export interface ProjectPayload {
   id: string;
@@ -130,7 +131,7 @@ export async function saveProjectToDb(data: ProjectPayload) {
       throw new Error('User record not found in database.');
     }
 
-    return await prisma.project.upsert({
+    const savedProject = await prisma.project.upsert({
       where: { id: data.id },
       update: {
         title: data.title,
@@ -151,6 +152,19 @@ export async function saveProjectToDb(data: ProjectPayload) {
         userId: dbUser.id,
       },
     });
+
+    if (savedProject.progress >= 100 || savedProject.status.toLowerCase() === 'completed') {
+      await createUserNotification(clerkId, {
+        title: 'Project completed',
+        message: `${savedProject.title} reached 100% progress.`,
+        type: 'project_completed',
+        dedupeKey: `project-completed:${savedProject.id}`,
+        link: `/dashboard/projects/${savedProject.id}`,
+        projectId: savedProject.id,
+      });
+    }
+
+    return savedProject;
   } catch (error) {
     console.error('Failed to save project details to database:', error);
     
@@ -196,6 +210,29 @@ export async function toggleProjectMilestoneInDb(projectId: string, stepId: stri
       }
     });
 
+    const completedStep = steps.find((step) => step.id === stepId && step.completed);
+    if (completedStep) {
+      await createUserNotification(clerkId, {
+        title: 'Milestone completed',
+        message: `${completedStep.title} was completed in ${updatedProject.title}.`,
+        type: 'milestone_completed',
+        dedupeKey: `milestone-completed:${projectId}:${stepId}`,
+        link: `/dashboard/projects/${projectId}`,
+        projectId,
+      });
+    }
+
+    if (progress === 100) {
+      await createUserNotification(clerkId, {
+        title: 'Project completed',
+        message: `${updatedProject.title} reached 100% progress.`,
+        type: 'project_completed',
+        dedupeKey: `project-completed:${projectId}`,
+        link: `/dashboard/projects/${projectId}`,
+        projectId,
+      });
+    }
+
     return updatedProject;
   } catch (error) {
     console.error('Failed to update project milestone in database:', error);
@@ -223,15 +260,6 @@ export async function createActivityInDb(projectId: string, description: string,
       throw new Error('User record not found.');
     }
 
-    const ownedProject = await prisma.project.findFirst({
-      where: { id: projectId, userId: dbUser.id },
-      select: { id: true },
-    });
-
-    if (!ownedProject) {
-      throw new Error('Project not found or does not belong to the authenticated user.');
-    }
-
     return await prisma.activity.create({
       data: {
         type,
@@ -248,32 +276,5 @@ export async function createActivityInDb(projectId: string, description: string,
       return null;
     }
     throw error;
-  }
-}
-
-
-/**
- * Returns activity entries owned by the authenticated user. Supplying a
- * project ID scopes the feed to one project; otherwise it returns recent
- * activity across all of the user's projects.
- */
-export async function getProjectActivities(projectId?: string, limit: number = 30) {
-  try {
-    const clerkId = await getAuthenticatedUserId();
-    const dbUser = await prisma.user.findUnique({ where: { clerkId }, select: { id: true } });
-    if (!dbUser) return [];
-
-    return await prisma.activity.findMany({
-      where: {
-        userId: dbUser.id,
-        ...(projectId ? { projectId } : {}),
-      },
-      include: { project: { select: { title: true } } },
-      orderBy: { createdAt: 'desc' },
-      take: Math.min(Math.max(limit, 1), 100),
-    });
-  } catch (error) {
-    console.error('Failed to retrieve project activity:', error);
-    return [];
   }
 }
