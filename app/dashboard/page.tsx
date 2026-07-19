@@ -21,19 +21,24 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
-import {
-  Bar,
-  BarChart,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from 'recharts';
+import dynamic from 'next/dynamic';
+import { RadarChartSkeleton, BarChartSkeleton } from '@/components/charts/ChartSkeleton';
+
+const SkillRadarChart = dynamic(
+  () => import('@/components/charts/SkillRadarChart'),
+  {
+    ssr: false,
+    loading: () => <RadarChartSkeleton />,
+  }
+);
+
+const CommitBarChart = dynamic(
+  () => import('@/components/charts/CommitBarChart'),
+  {
+    ssr: false,
+    loading: () => <BarChartSkeleton />,
+  }
+);
 
 export default function MainDashboardPage() {
   const { user, projects, activities, careerScore, githubAnalytics, selectProject } = useAppStore();
@@ -103,22 +108,7 @@ export default function MainDashboardPage() {
             <Badge variant="glow">Score: {careerScore.overallScore}%</Badge>
           </CardHeader>
           <CardContent className="h-[280px] sm:h-[320px] flex items-center justify-center pt-4">
-            {mounted && (
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                  <PolarGrid stroke="rgba(255, 255, 255, 0.08)" />
-                  <PolarAngleAxis dataKey="subject" stroke="#94a3b8" fontSize={11} fontWeight={600} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="rgba(255, 255, 255, 0.15)" tickCount={4} fontSize={9} />
-                  <Radar 
-                    name="Current Skills" 
-                    dataKey="A" 
-                    stroke="#6366f1" 
-                    fill="#6366f1" 
-                    fillOpacity={0.25} 
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            )}
+            <SkillRadarChart data={radarData} />
           </CardContent>
           <CardFooter className="pt-2 flex items-center justify-between text-xs text-slate-400">
             <span>Core Match rate: 78%</span>
@@ -273,29 +263,7 @@ export default function MainDashboardPage() {
             <CardDescription className="text-xs">Commit consistency scores measured from active repository pushes.</CardDescription>
           </CardHeader>
           <CardContent className="h-[200px] pt-4">
-            {mounted && (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={commitData}>
-                  <XAxis dataKey="day" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#060417', borderColor: 'rgba(255,255,255,0.06)', borderRadius: 12 }} 
-                    labelStyle={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}
-                  />
-                  <Bar 
-                    dataKey="commits" 
-                    fill="url(#barGradient)" 
-                    radius={[6, 6, 0, 0]} 
-                  />
-                  <defs>
-                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#8b5cf6" />
-                      <stop offset="100%" stopColor="#6366f1" />
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            <CommitBarChart data={commitData} />
           </CardContent>
           <CardFooter className="pt-2 flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
             <span>Average: 5.7 commits / day</span>
