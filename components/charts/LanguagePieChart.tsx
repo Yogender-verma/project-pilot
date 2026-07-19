@@ -41,28 +41,30 @@ export const LanguagePieChart: React.FC<LanguagePieChartProps> = ({ data }) => {
   }));
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <PieChart>
-        <Pie
-          data={chartData}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          label={renderCustomizedLabel}
-          outerRadius={55}
-          fill="#8884d8"
-          dataKey="val"
-        >
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
-          ))}
-        </Pie>
-        <Tooltip
-          contentStyle={{ backgroundColor: '#060417', borderColor: 'rgba(255,255,255,0.06)', borderRadius: 12 }}
-          itemStyle={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}
-        />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="w-full h-full outline-none focus:outline-none [&_*]:outline-none [&_*]:focus:outline-none [&_svg]:outline-none select-none">
+      <ResponsiveContainer width="100%" height="100%" style={{ outline: 'none' }}>
+        <PieChart style={{ outline: 'none' }}>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={renderCustomizedLabel}
+            outerRadius={55}
+            fill="#8884d8"
+            dataKey="val"
+          >
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} style={{ outline: 'none' }} />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{ backgroundColor: '#060417', borderColor: 'rgba(255,255,255,0.06)', borderRadius: 12 }}
+            itemStyle={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
 

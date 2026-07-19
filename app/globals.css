@@ -430,3 +430,24 @@ div:has(> .cl-devMode) {
   background-color: var(--surface-secondary) !important;
 }
 
+/* ── Remove Recharts SVG focus borders / outlines ──── */
+.recharts-wrapper,
+.recharts-surface,
+.recharts-responsive-container,
+.recharts-layer,
+.recharts-sector,
+.recharts-pie,
+.recharts-radar,
+.recharts-bar {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.recharts-wrapper *:focus,
+.recharts-surface *:focus,
+.recharts-responsive-container *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+
