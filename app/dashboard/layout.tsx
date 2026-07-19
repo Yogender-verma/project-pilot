@@ -235,15 +235,16 @@ export default function DashboardLayout({
             <button
               type="button"
               onClick={() => setCommandPaletteOpen(true)}
-              className="hidden sm:flex items-center gap-3.5 h-11 min-w-60 lg:min-w-72 px-4 rounded-2xl border transition-all cursor-pointer hover:border-indigo-500/40 hover:bg-indigo-500/5 shadow-sm"
+              aria-label="Open global search (Ctrl K)"
+              title="Open global search (Ctrl K)"
+              className="hidden sm:flex items-center gap-3.5 h-11 min-w-60 lg:min-w-72 px-4 rounded-2xl border transition-all cursor-pointer hover:border-indigo-500/40 hover:bg-indigo-500/5 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               style={{
                 borderColor: 'var(--border-subtle)',
                 backgroundColor: 'var(--hover-bg)',
                 color: 'var(--text-secondary)',
               }}
-              aria-label="Open global search"
             >
-              <Search className="w-4.5 h-4.5 text-indigo-400 shrink-0" />
+              <Search className="w-4.5 h-4.5 text-indigo-400 shrink-0" aria-hidden="true" />
               <span className="text-xs font-medium flex-1 text-left">Search pages and projects...</span>
               <kbd className="hidden lg:inline-flex rounded-lg border border-white/10 bg-white/10 px-2 py-0.5 text-[11px] font-mono text-slate-400">
                 Ctrl K
@@ -253,17 +254,21 @@ export default function DashboardLayout({
             {/* AI Career readiness Quick Summary Widget */}
             <Link
               href="/dashboard/career"
-              className="flex items-center space-x-2.5 px-4 py-2.5 bg-indigo-500/10 rounded-2xl border border-indigo-500/25 text-xs font-bold text-indigo-400 hover:bg-indigo-500/15 transition-all shadow-sm"
+              aria-label={`Career Score: ${careerScore.overallScore}% match rate`}
+              title="View Career Readiness Score breakdown"
+              className="flex items-center space-x-2.5 px-4 py-2.5 bg-indigo-500/10 rounded-2xl border border-indigo-500/25 text-xs font-bold text-indigo-400 hover:bg-indigo-500/15 transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
-              <Award className="w-4 h-4 animate-bounce" />
+              <Award className="w-4 h-4 animate-bounce" aria-hidden="true" />
               <span>Career Score: {careerScore.overallScore}%</span>
             </Link>
 
             {/* Theme Switcher Toggle */}
             <button
+              type="button"
               onClick={toggleTheme}
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-              className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               style={{
                 borderColor: 'var(--border-subtle)',
                 color: 'var(--text-secondary)',
@@ -271,24 +276,29 @@ export default function DashboardLayout({
               }}
             >
               {theme === 'dark'
-                ? <Sun className="w-5 h-5 text-amber-400" />
-                : <Moon className="w-5 h-5 text-indigo-400" />
+                ? <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                : <Moon className="w-5 h-5 text-indigo-400" aria-hidden="true" />
               }
             </button>
 
             {/* Notifications panel trigger */}
             <div className="relative">
               <button
+                type="button"
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="p-3 rounded-2xl border transition-all cursor-pointer relative hover:scale-105 active:scale-95 shadow-sm"
+                aria-label="View notifications"
+                title="View notifications"
+                aria-expanded={showNotifications}
+                aria-haspopup="true"
+                className="p-3 rounded-2xl border transition-all cursor-pointer relative hover:scale-105 active:scale-95 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 style={{
                   borderColor: 'var(--border-subtle)',
                   color: 'var(--text-secondary)',
                   backgroundColor: 'var(--hover-bg)',
                 }}
               >
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full ring-2 ring-indigo-400/30" />
+                <Bell className="w-5 h-5" aria-hidden="true" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full ring-2 ring-indigo-400/30" aria-hidden="true" />
               </button>
 
               <AnimatePresence>

@@ -434,18 +434,30 @@ export default function OnboardingPage() {
                     {/* Search / Add box */}
                     <div className="flex items-center space-x-2">
                       <div className="relative flex-1">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <label htmlFor="onboarding-skill-search" className="sr-only">
+                          Search or enter custom skill
+                        </label>
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
                         <input
+                          id="onboarding-skill-search"
                           type="text"
                           placeholder="Search or enter custom skill..."
                           value={skillSearch}
                           onChange={(e) => setSkillSearch(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && addNewSkill()}
-                          className="w-full bg-[#0a071a]/50 text-slate-100 placeholder-slate-500 text-sm rounded-xl border border-white/10 px-4 py-3 pl-11 focus:outline-none focus:border-indigo-500/80"
+                          className="w-full bg-[#0a071a]/50 text-slate-100 placeholder-slate-500 text-sm rounded-xl border border-white/10 px-4 py-3 pl-11 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                         />
                       </div>
-                      <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl" onClick={addNewSkill}>
-                        <Plus className="w-5 h-5" />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        aria-label="Add custom skill"
+                        title="Add custom skill"
+                        className="h-11 w-11 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                        onClick={addNewSkill}
+                      >
+                        <Plus className="w-5 h-5" aria-hidden="true" />
                       </Button>
                     </div>
 

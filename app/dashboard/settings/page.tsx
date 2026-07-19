@@ -261,38 +261,47 @@ export default function SettingsPage() {
               
               <form onSubmit={handleSaveProfile} className="space-y-4 pt-1">
                 <Input
+                  id="settings-name"
                   label="Display Name"
                   value={profileName}
                   onChange={(e) => setProfileName(e.target.value)}
-                  leftIcon={<UserIcon className="w-4.5 h-4.5" />}
+                  leftIcon={<UserIcon className="w-4.5 h-4.5" aria-hidden="true" />}
+                  required
                 />
 
                 <Input
+                  id="settings-email"
                   label="Email Address"
                   type="email"
                   value={profileEmail}
                   onChange={(e) => setProfileEmail(e.target.value)}
-                  leftIcon={<UserIcon className="w-4.5 h-4.5" />}
+                  leftIcon={<UserIcon className="w-4.5 h-4.5" aria-hidden="true" />}
+                  required
                 />
 
                 <Input
+                  id="settings-goal"
                   label="Target Career Goal"
                   value={profileGoal}
                   onChange={(e) => setProfileGoal(e.target.value)}
-                  leftIcon={<UserIcon className="w-4.5 h-4.5" />}
+                  leftIcon={<UserIcon className="w-4.5 h-4.5" aria-hidden="true" />}
                 />
 
                 <div className="flex items-center justify-between pt-4">
                   {saveSuccess && (
-                    <span className="text-xs text-emerald-400 font-semibold flex items-center">
-                      <CheckCircle className="w-4 h-4 mr-1.5 animate-bounce" />
+                    <span
+                      role="status"
+                      aria-live="polite"
+                      className="text-xs text-emerald-400 font-semibold flex items-center"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-1.5 animate-bounce" aria-hidden="true" />
                       Changes saved successfully
                     </span>
                   )}
                   <Button
                     type="submit"
                     variant="premium"
-                    className="h-11 px-6 ml-auto text-xs font-semibold"
+                    className="h-11 px-6 ml-auto text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                   >
                     Save Profile Changes
                   </Button>
@@ -312,17 +321,19 @@ export default function SettingsPage() {
                 className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
                 style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
               >
-                <div className="space-y-1">
+                <label htmlFor="notify-weekly-plan" className="space-y-1 cursor-pointer flex-1">
                   <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>Weekly plan guides alerts</h4>
                   <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                     Receive automated email alerts summarizing checklist items for the week.
                   </p>
-                </div>
+                </label>
                 <input
+                  id="notify-weekly-plan"
                   type="checkbox"
                   checked={notifyWeeklyPlan}
                   onChange={() => setNotifyWeeklyPlan(!notifyWeeklyPlan)}
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer"
+                  aria-label="Weekly plan guides alerts"
+                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 />
               </div>
 
@@ -330,17 +341,19 @@ export default function SettingsPage() {
                 className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
                 style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
               >
-                <div className="space-y-1">
+                <label htmlFor="notify-mentor-replied" className="space-y-1 cursor-pointer flex-1">
                   <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>AI Mentor replies stream alerts</h4>
                   <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                     Push notifications alert when AI mentor finishes vector parsing calculations.
                   </p>
-                </div>
+                </label>
                 <input
+                  id="notify-mentor-replied"
                   type="checkbox"
                   checked={notifyMentorReplied}
                   onChange={() => setNotifyMentorReplied(!notifyMentorReplied)}
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer"
+                  aria-label="AI Mentor replies stream alerts"
+                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 />
               </div>
 
@@ -348,17 +361,19 @@ export default function SettingsPage() {
                 className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
                 style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
               >
-                <div className="space-y-1">
+                <label htmlFor="notify-recruiter-scans" className="space-y-1 cursor-pointer flex-1">
                   <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>Recruiter search logs crawl alerts</h4>
                   <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                     Receive instant notifications when recruiters request access indices.
                   </p>
-                </div>
+                </label>
                 <input
+                  id="notify-recruiter-scans"
                   type="checkbox"
                   checked={notifyRecruiterScans}
                   onChange={() => setNotifyRecruiterScans(!notifyRecruiterScans)}
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer"
+                  aria-label="Recruiter search logs crawl alerts"
+                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 />
               </div>
             </CardContent>

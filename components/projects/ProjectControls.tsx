@@ -58,7 +58,7 @@ export function ProjectControls({
             placeholder="Search projects, technologies, or categories..."
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
-            className="w-full rounded-xl border border-white/5 bg-[#0a071a]/50 px-4 py-3 pl-11 text-xs text-slate-200 outline-none placeholder:text-slate-500 focus:border-indigo-500/55"
+            className="w-full rounded-xl border border-white/5 bg-[#0a071a]/50 px-4 py-3 pl-11 text-xs text-slate-200 outline-none placeholder:text-slate-500 focus:border-indigo-500/55 focus-visible:ring-2 focus-visible:ring-indigo-500"
           />
         </label>
 
@@ -71,7 +71,7 @@ export function ProjectControls({
               id="project-sort"
               value={sortBy}
               onChange={(event) => onSortChange(event.target.value as ProjectSort)}
-              className="min-w-48 cursor-pointer rounded-xl border border-white/10 bg-[#0a071a] px-3 py-2.5 text-xs font-semibold text-slate-200 outline-none focus:border-indigo-500/55"
+              className="min-w-48 cursor-pointer rounded-xl border border-white/10 bg-[#0a071a] px-3 py-2.5 text-xs font-semibold text-slate-200 outline-none focus:border-indigo-500/55 focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               <option value="recent">Recently updated</option>
               <option value="oldest">Oldest updated</option>
@@ -87,22 +87,22 @@ export function ProjectControls({
               onClick={() => onViewChange('grid')}
               aria-label="Show projects in grid view"
               aria-pressed={view === 'grid'}
-              className={`rounded-lg p-2 transition ${
+              className={`rounded-lg p-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                 view === 'grid' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-500 hover:text-white'
               }`}
             >
-              <Grid2X2 className="h-4 w-4" />
+              <Grid2X2 className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               type="button"
               onClick={() => onViewChange('list')}
               aria-label="Show projects in list view"
               aria-pressed={view === 'list'}
-              className={`rounded-lg p-2 transition ${
+              className={`rounded-lg p-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                 view === 'list' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-500 hover:text-white'
               }`}
             >
-              <List className="h-4 w-4" />
+              <List className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>

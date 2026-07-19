@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
@@ -285,15 +285,16 @@ export function CommandPalette({
             onKeyDown={handleKeyDown}
             placeholder="Search pages and projects..."
             autoComplete="off"
-            className="h-14 min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500 sm:h-16 sm:text-base"
+            className="h-14 min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500 sm:h-16 sm:text-base focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-lg px-2"
           />
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             aria-label="Close global search"
+            title="Close global search"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
