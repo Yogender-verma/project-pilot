@@ -25,7 +25,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({ data }) => {
     <div className="w-full h-full outline-none focus:outline-none [&_*]:outline-none [&_*]:focus:outline-none [&_svg]:outline-none select-none">
       <ResponsiveContainer width="100%" height="100%" style={{ outline: 'none' }}>
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data} style={{ outline: 'none' }}>
-          <PolarGrid stroke="rgba(255, 255, 255, 0.1)" />
+          <PolarGrid stroke="rgba(255, 255, 255, 0.15)" />
           <PolarAngleAxis
             dataKey="subject"
             stroke="#94a3b8"
@@ -38,7 +38,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({ data }) => {
             dataKey="A"
             stroke="#8b5cf6"
             fill="#6366f1"
-            fillOpacity={0.45}
+            fillOpacity={0.4}
           />
         </RadarChart>
       </ResponsiveContainer>

@@ -28,7 +28,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
   return (
-    <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={10} fontWeight="bold">
+    <text x={x} y={y} fill="#ffffff" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={10} fontWeight="bold">
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
@@ -59,8 +59,9 @@ export const LanguagePieChart: React.FC<LanguagePieChartProps> = ({ data }) => {
             ))}
           </Pie>
           <Tooltip
-            contentStyle={{ backgroundColor: '#060417', borderColor: 'rgba(255,255,255,0.06)', borderRadius: 12 }}
-            itemStyle={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}
+            contentStyle={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--border-medium)', borderRadius: 12 }}
+            itemStyle={{ color: 'var(--text-primary)', fontSize: 11, fontWeight: 'bold' }}
+            labelStyle={{ color: 'var(--text-primary)' }}
           />
         </PieChart>
       </ResponsiveContainer>
