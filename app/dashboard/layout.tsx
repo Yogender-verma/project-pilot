@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileDrawer } from '@/components/layout/MobileDrawer';
 import { CommandPalette } from '@/components/dashboard/CommandPalette';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { 
-  Bell, 
   Search, 
   Menu, 
   X, 
@@ -36,7 +36,6 @@ export default function DashboardLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   // Real theme state from the global ThemeProvider (persisted in localStorage)
   const { theme, toggleTheme } = useTheme();
@@ -115,11 +114,6 @@ export default function DashboardLayout({
     return 'Dashboard';
   };
 
-  const notifications = [
-    { id: 1, title: 'GitHub crawler finished scan', time: '10 min ago', unread: true },
-    { id: 2, title: 'Mentor generated new connector code', time: '1 hr ago', unread: true },
-    { id: 3, title: 'Resume scored at 72% overall readiness', time: '2 hr ago', unread: false }
-  ];
 
   return (
     /*
