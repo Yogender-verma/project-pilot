@@ -83,7 +83,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
 
   const displayUser = {
     name:
-      storeUser?.fullName ||
       storeUser?.name ||
       clerkUser?.fullName ||
       [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(' ') ||
@@ -95,7 +94,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
       clerkUser?.emailAddresses?.[0]?.emailAddress ||
       '',
     avatarUrl:
-      storeUser?.imageUrl ||
       storeUser?.avatarUrl ||
       clerkUser?.imageUrl ||
       ''
