@@ -7,7 +7,8 @@ import {
   ChatConversation, 
   ChatMessage, 
   GitHubAnalytics, 
-  CareerScore 
+  CareerScore,
+  ProjectActivity
 } from '../types';
 
 import { generateAdaptiveDashboard } from '@/lib/adaptiveEngine';
@@ -279,6 +280,10 @@ interface AppStore {
   setProjects: (projects: Project[]) => void;
   selectProject: (id: string | null) => void;
 
+  // Project Activity State
+  activities: ProjectActivity[];
+  setActivities: (activities: ProjectActivity[]) => void;
+
   // Roadmaps State
   roadmaps: Record<string, Roadmap>;
   toggleStepCompletion: (projectId: string, stepId: string) => void;
@@ -437,10 +442,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
             ...ap,
             status: dbProj.status,
             progress: dbProj.progress,
+            createdAt: dbProj.createdAt,
+            updatedAt: dbProj.updatedAt,
           };
         }
         return ap;
       });
+
+      const dbActivities: ProjectActivity[] = dbProjects.flatMap((dp: any) =>
+        (dp.activities || []).map((activity: any) => ({
+          id: activity.id,
+          type: activity.type,
+          description: activity.description,
+          projectId: activity.projectId,
+          projectTitle: dp.title,
+          createdAt: new Date(activity.createdAt).toISOString(),
+        }))
+      ).sort((a: ProjectActivity, b: ProjectActivity) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
       const updatedRoadmaps = { ...state.roadmaps };
       dbProjects.forEach((dp: any) => {
@@ -464,6 +484,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         careerScore: adaptive.careerScore,
         projects: mergedProjects,
         roadmaps: updatedRoadmaps,
+        activities: dbActivities,
         githubAnalytics: { ...state.githubAnalytics, recruiterInsights: adaptive.insights }
       };
     });
@@ -474,6 +495,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   selectedProjectId: 'project-1',
   setProjects: (projects) => set({ projects }),
   selectProject: (id) => set({ selectedProjectId: id }),
+
+  // Project Activity State
+  activities: [],
+  setActivities: (activities) => set({ activities }),
 
   // Roadmaps State
   roadmaps: INITIAL_ROADMAPS,
@@ -499,6 +524,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     // Sync changes to the database
     toggleProjectMilestoneInDb(projectId, stepId, updatedSteps, progress);
+    const projectTitle = state.projects.find((project) => project.id === projectId)?.title;
+    const newActivity: ProjectActivity | null = isCompleted ? {
+      id: `local-${Date.now()}-${stepId}`,
+      type: 'milestone',
+      description: `Completed milestone: ${stepTitle}`,
+      projectId,
+      projectTitle,
+      createdAt: new Date().toISOString(),
+    } : null;
+
     if (isCompleted) {
       createActivityInDb(projectId, `Completed milestone: ${stepTitle}`, 'milestone');
     }
@@ -511,6 +546,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           steps: updatedSteps
         }
       },
+      activities: newActivity ? [newActivity, ...state.activities] : state.activities,
       projects: state.projects.map(p => {
         if (p.id === projectId) {
           return {
@@ -601,7 +637,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
       createActivityInDb(projectId, `Initialized Blueprint: ${title}`, 'project_start');
     }
 
+    const newActivity: ProjectActivity = {
+      id: `local-${Date.now()}-${projectId}`,
+      type: 'project_start',
+      description: `Initialized Blueprint: ${title}`,
+      projectId,
+      projectTitle: title,
+      createdAt: new Date().toISOString(),
+    };
+
     return {
+      activities: [newActivity, ...state.activities],
       roadmaps: {
         ...state.roadmaps,
         [projectId]: {

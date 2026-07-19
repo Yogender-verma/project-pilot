@@ -20,7 +20,8 @@ import {
   Share2,
   Copy,
   CheckCircle,
-  FileText
+  FileText,
+  Activity
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
@@ -28,14 +29,15 @@ import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import { Button } from '@/components/ui/Button';
 import { ProjectExportMenu } from '@/components/projects/ProjectExportMenu';
+import { ActivityTimeline } from '@/components/projects/ActivityTimeline';
 
 export default function ProjectDetailsPage() {
   const router = useRouter();
   const params = useParams();
-  const { projects, roadmaps, toggleStepCompletion, selectProject } = useAppStore();
+  const { projects, roadmaps, activities, toggleStepCompletion, selectProject } = useAppStore();
   
   // Local states
-  const [activeTab, setActiveTab] = useState<'Overview' | 'Timeline' | 'Sandbox' | 'Keywords'>('Overview');
+  const [activeTab, setActiveTab] = useState<'Overview' | 'Timeline' | 'Activity' | 'Sandbox' | 'Keywords'>('Overview');
   const [copiedKeywordIdx, setCopiedKeywordIdx] = useState<number | null>(null);
   
   // Find project based on slug params or active Zustand ID
@@ -82,6 +84,7 @@ export default function ProjectDetailsPage() {
   const tabs = [
     { id: 'Overview', label: 'Specifications', icon: BookOpen },
     { id: 'Timeline', label: 'Milestones & Timeline', icon: Clock },
+    { id: 'Activity', label: 'Project Activity', icon: Activity },
     { id: 'Sandbox', label: 'Developer Sandbox Specs', icon: TermIcon },
     { id: 'Keywords', label: 'Recruiter Handshakes', icon: TrendingUp }
   ] as const;
@@ -346,6 +349,26 @@ export default function ProjectDetailsPage() {
                   </div>
                 ))}
               </div>
+            </motion.div>
+          )}
+
+          {/* PROJECT-SPECIFIC ACTIVITY FEED */}
+          {activeTab === 'Activity' && (
+            <motion.div
+              key="activity"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <Card hoverEffect={false} className="bg-[#08051e]/40">
+                <CardContent className="pt-6">
+                  <ActivityTimeline
+                    activities={activities.filter((activity) => activity.projectId === project.id)}
+                    title={`${project.title} activity`}
+                    description="Milestones and important changes recorded for this project."
+                  />
+                </CardContent>
+              </Card>
             </motion.div>
           )}
 

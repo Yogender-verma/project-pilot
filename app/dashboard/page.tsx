@@ -5,6 +5,7 @@ import { Github } from '@/components/ui/BrandIcons';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Progress } from '@/components/ui/Progress';
+import { ActivityTimeline } from '@/components/projects/ActivityTimeline';
 import { useAppStore } from '@/store/useAppStore';
 import { useClerk, useUser } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
@@ -35,7 +36,7 @@ import {
 } from 'recharts';
 
 export default function MainDashboardPage() {
-  const { user, projects, careerScore, githubAnalytics, selectProject } = useAppStore();
+  const { user, projects, activities, careerScore, githubAnalytics, selectProject } = useAppStore();
   const { user: clerkUser } = useUser();
 
   const [mounted, setMounted] = React.useState(false);
@@ -347,6 +348,19 @@ export default function MainDashboardPage() {
         </Card>
 
       </div>
+
+      {/* Project Activity Timeline */}
+      <Card hoverEffect={false} className="bg-[#08051e]/40">
+        <CardContent className="pt-6">
+          <ActivityTimeline
+            activities={activities}
+            limit={6}
+            showProjectName
+            title="Recent updates"
+            description="The latest milestones and blueprint changes across your projects."
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }
