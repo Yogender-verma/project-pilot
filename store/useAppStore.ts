@@ -268,8 +268,8 @@ interface AppStore {
   login: (email: string, name: string) => void;
   signup: (email: string, name: string, careerGoal: string) => void;
   logout: () => void;
+  updateProfile: (name: string, email: string, careerGoal: string) => void;
   updateUserSkills: (skills: string[]) => void;
-  updateUserProfile: (name: string, email: string, careerGoal: string) => void;
   syncUserProfile: (dbUser: any) => void;
 
   // Projects State
@@ -380,9 +380,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
   logout: () => set({ user: null, isAuthenticated: false }),
-  updateUserSkills: (skills) => set((state) => {
+  updateProfile: (name, email, careerGoal) => set((state) => {
     if (!state.user) return {};
-    const updatedUser = { ...state.user, skills };
+    const updatedUser = { ...state.user, name, email, careerGoal };
     const adaptive = generateAdaptiveDashboard(updatedUser);
     return {
       user: updatedUser,
@@ -391,9 +391,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       githubAnalytics: { ...state.githubAnalytics, recruiterInsights: adaptive.insights }
     };
   }),
-  updateUserProfile: (name, email, careerGoal) => set((state) => {
+  updateUserSkills: (skills) => set((state) => {
     if (!state.user) return {};
-    const updatedUser = { ...state.user, name, email, careerGoal };
+    const updatedUser = { ...state.user, skills };
     const adaptive = generateAdaptiveDashboard(updatedUser);
     return {
       user: updatedUser,

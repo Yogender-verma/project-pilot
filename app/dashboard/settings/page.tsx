@@ -25,7 +25,7 @@ import { useTheme } from '@/lib/ThemeProvider';
 import type { Theme } from '@/lib/ThemeProvider';
 
 export default function SettingsPage() {
-  const { user, onboardingData, updateUserProfile, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub } = useAppStore();
+  const { user, onboardingData, updateProfile, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub } = useAppStore();
 
   // Access the global theme state & setTheme so the user can pick directly
   const { theme, setTheme } = useTheme();
@@ -47,7 +47,7 @@ export default function SettingsPage() {
   // Save profile information
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    updateUserProfile(profileName, profileEmail, profileGoal);
+    updateProfile(profileName, profileEmail, profileGoal);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2000);
   };
