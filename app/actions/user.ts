@@ -154,3 +154,81 @@ export async function updateProfileAvatar(imageUrl: string) {
     throw error;
   }
 }
+
+export async function updateProfessionalLinks(data: {
+  githubUrl?: string;
+  linkedinUrl?: string;
+  resumeUrl?: string;
+}) {
+  let userId: string | null = null;
+
+  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    const session = await auth();
+    userId = session.userId;
+  } else if (process.env.NODE_ENV === "development") {
+    userId = "mock-developer-id";
+  }
+
+  if (!userId) {
+    throw new Error("Unauthenticated user.");
+  }
+
+  try {
+    return await prisma.user.upsert({
+  where: {
+    clerkId: userId,
+  },
+  update: {
+    githubUrl: data.githubUrl || null,
+    linkedinUrl: data.linkedinUrl || null,
+    resumeUrl: data.resumeUrl || null,
+  },
+  create: {
+    clerkId: userId,
+    fullName: "Dev User",
+    email: `dev-${userId}@localhost`,
+    skills: [],
+    githubUrl: data.githubUrl || null,
+    linkedinUrl: data.linkedinUrl || null,
+    resumeUrl: data.resumeUrl || null,
+    onboardingCompleted: false,
+  },
+});
+  } catch (error) {
+
+    if (process.env.NODE_ENV === "development") {
+      return {
+        clerkId: userId,
+        ...data,
+      };
+    }
+
+    throw error;
+  }
+}
+
+export async function getProfessionalLinks() {
+  let userId: string |null = null;
+
+  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+      const session = await auth();
+      userId = session.userId;
+  } else if (process.env.NODE_ENV === "development") {
+      userId = "mock-developer-id";
+  }
+
+  if (!userId) return null;
+
+  const user = await prisma.user.findUnique({
+      where:{
+          clerkId:userId,
+      },
+      select:{
+          githubUrl:true,
+          linkedinUrl:true,
+          resumeUrl:true,
+      }
+  });
+
+  return user;
+}

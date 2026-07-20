@@ -29,10 +29,14 @@ import { useTheme } from '@/lib/ThemeProvider';
 import type { Theme } from '@/lib/ThemeProvider';
 
 // UploadThing Integrations
-import { updateProfileAvatar } from '@/app/actions/user';
+import {
+    updateProfileAvatar,
+    updateProfessionalLinks,
+    getProfessionalLinks,
+} from '@/app/actions/user';
 
 export default function SettingsPage() {
-  const { user, onboardingData, updateProfile, updateAvatar, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub } = useAppStore();
+  const { user, onboardingData, updateProfile, updateAvatar, updateProfessionalLinks: updateLinksStore, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub } = useAppStore();
 
   // Access the global theme state & setTheme so the user can pick directly
   const { theme, setTheme } = useTheme();
@@ -41,6 +45,36 @@ export default function SettingsPage() {
   const [profileName, setProfileName] = useState(user?.name || 'yogender verma');
   const [profileEmail, setProfileEmail] = useState(user?.email || 'yogendarverma0268@gmail.com');
   const [profileGoal, setProfileGoal] = useState(user?.careerGoal || 'AI Engineer');
+  const [githubUrl, setGithubUrl] = useState(user?.githubUrl || '');
+  const [linkedinUrl, setLinkedinUrl] = useState(user?.linkedinUrl || '');
+  const [resumeUrl, setResumeUrl] = useState(user?.resumeUrl || '');
+
+  const [linksLoading, setLinksLoading] = useState(false);
+  const [linksSuccess, setLinksSuccess] = useState(false);
+  const [linksError, setLinksError] = useState('');
+  useEffect(() => {
+
+    async function loadLinks(){
+
+        try{
+
+            const data = await getProfessionalLinks();
+
+            if(!data) return;
+
+            setGithubUrl(data.githubUrl || "");
+            setLinkedinUrl(data.linkedinUrl || "");
+            setResumeUrl(data.resumeUrl || "");
+
+        }catch(err){
+            console.error(err);
+        }
+
+    }
+
+    loadLinks();
+
+},[]);
 
   // Notification states
   const [notifyWeeklyPlan, setNotifyWeeklyPlan] = useState(true);
@@ -111,6 +145,63 @@ export default function SettingsPage() {
     updateProfile(profileName, profileEmail, profileGoal);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  const validateUrl = (url: string) => {
+    if (!url) return true;
+
+    try {
+        new URL(url);
+        return true;
+    } catch {
+        return false;
+    }
+  };
+
+  const handleSaveLinks = async () => {
+
+    if (
+        !validateUrl(githubUrl) ||
+        !validateUrl(linkedinUrl) ||
+        !validateUrl(resumeUrl)
+    ) {
+        setLinksError("Please enter valid URLs.");
+        return;
+    }
+
+    setLinksError("");
+    setLinksLoading(true);
+
+    try {
+
+        await updateProfessionalLinks({
+            githubUrl,
+            linkedinUrl,
+            resumeUrl,
+        });
+
+        updateLinksStore(
+            githubUrl,
+            linkedinUrl,
+            resumeUrl
+        );
+
+        setLinksSuccess(true);
+
+        setTimeout(() => {
+            setLinksSuccess(false);
+        },2000);
+
+    } catch {
+
+        setLinksError("Failed to save links.");
+
+    } finally {
+
+        setLinksLoading(false);
+
+    }
+
   };
 
   // Reset Onboarding pathway
@@ -317,6 +408,64 @@ export default function SettingsPage() {
               </form>
             </CardContent>
           </Card>
+
+          <Card hoverEffect={false}>
+    <CardHeader>
+        <CardTitle>
+            Professional Links
+        </CardTitle>
+
+        <CardDescription>
+            Manage your GitHub, LinkedIn and Resume URLs.
+        </CardDescription>
+    </CardHeader>
+
+    <CardContent className="space-y-4">
+
+        <Input
+            label="GitHub URL"
+            value={githubUrl}
+            onChange={(e)=>setGithubUrl(e.target.value)}
+        />
+
+        <Input
+            label="LinkedIn URL"
+            value={linkedinUrl}
+            onChange={(e)=>setLinkedinUrl(e.target.value)}
+        />
+
+        <Input
+            label="Resume URL"
+            value={resumeUrl}
+            onChange={(e)=>setResumeUrl(e.target.value)}
+        />
+
+        {linksError && (
+            <p className="text-xs text-red-500">
+                {linksError}
+            </p>
+        )}
+
+        {linksSuccess && (
+            <p className="text-xs text-green-500">
+                Links updated successfully.
+            </p>
+        )}
+
+        <Button
+            onClick={handleSaveLinks}
+            disabled={linksLoading}
+            variant="premium"
+            className="mt-2"
+        >
+            {linksLoading
+                ? "Saving..."
+                : "Save Professional Links"}
+        </Button>
+
+    </CardContent>
+</Card>
+
 
           {/* ─── NOTIFICATION PREFERENCES ────────────────────────────────── */}
           <Card hoverEffect={false}>

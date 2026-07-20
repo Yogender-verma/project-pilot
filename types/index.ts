@@ -4,6 +4,11 @@ export interface User {
   email: string;
   avatarUrl?: string;
   careerGoal?: string;
+
+  githubUrl?: string;
+  linkedinUrl?: string;
+  resumeUrl?: string;
+
   skills: string[];
 }
 
