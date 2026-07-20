@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
   Settings,
@@ -275,7 +276,14 @@ export default function SettingsPage() {
               <div className="p-4 bg-white/5 rounded-xl border border-white/5 flex flex-col sm:flex-row items-center gap-6 mb-6 text-xs sm:text-sm">
                 <div className="relative w-20 h-20 rounded-full border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden shrink-0 group">
                   {previewUrl ? (
-                    <img src={previewUrl} alt="Avatar Preview" className="w-full h-full object-cover transition duration-200 group-hover:opacity-75" />
+                    <Image
+                      src={previewUrl}
+                      alt="Profile Avatar Preview"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover transition duration-200 group-hover:opacity-75"
+                      unoptimized={previewUrl.startsWith('data:') || previewUrl.startsWith('blob:')}
+                    />
                   ) : (
                     <UserIcon className="w-8 h-8 text-slate-500" />
                   )}

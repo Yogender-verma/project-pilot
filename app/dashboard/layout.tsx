@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileDrawer } from '@/components/layout/MobileDrawer';
 import { CommandPalette } from '@/components/dashboard/CommandPalette';
@@ -34,8 +34,14 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const { user, careerScore, projects, selectProject, syncUserProfile } = useAppStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
- const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Real theme state from the global ThemeProvider (persisted in localStorage)
   const { theme, toggleTheme } = useTheme();
@@ -159,7 +165,7 @@ export default function DashboardLayout({
             <button
               type="button"
               onClick={toggleTheme}
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              aria-label={!mounted ? 'Switch theme' : `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
               className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
               style={{
                 borderColor: 'var(--border-subtle)',
@@ -167,10 +173,13 @@ export default function DashboardLayout({
                 backgroundColor: 'var(--hover-bg)',
               }}
             >
-              {theme === 'dark'
-                ? <Sun className="w-5 h-5 text-amber-400" />
-                : <Moon className="w-5 h-5 text-indigo-400" />
-              }
+              {!mounted ? (
+                <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
+              ) : theme === 'dark' ? (
+                <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
+              ) : (
+                <Moon className="w-5 h-5 text-indigo-400" aria-hidden="true" />
+              )}
             </button>
 
             {/* Mobile Notifications button */}
@@ -247,8 +256,8 @@ export default function DashboardLayout({
             <button
               type="button"
               onClick={toggleTheme}
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              aria-label={!mounted ? 'Switch theme' : `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              title={!mounted ? 'Switch theme' : `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
               className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               style={{
                 borderColor: 'var(--border-subtle)',
@@ -256,10 +265,13 @@ export default function DashboardLayout({
                 backgroundColor: 'var(--hover-bg)',
               }}
             >
-              {theme === 'dark'
-                ? <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
-                : <Moon className="w-5 h-5 text-indigo-400" aria-hidden="true" />
-              }
+              {!mounted ? (
+                <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
+              ) : theme === 'dark' ? (
+                <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
+              ) : (
+                <Moon className="w-5 h-5 text-indigo-400" aria-hidden="true" />
+              )}
             </button>
 
             {/* Notifications panel trigger */}
