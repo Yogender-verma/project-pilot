@@ -25,6 +25,9 @@ const DEFAULT_USER: User = {
   careerGoal: 'AI Engineer',
   skills: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS'],
   portfolioPublic: false,
+  githubUrl: '',
+  linkedinUrl: '',
+  resumeUrl: '',
 };
 
 const initialAdaptive = generateAdaptiveDashboard(DEFAULT_USER);
@@ -443,6 +446,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         careerGoal: dbUser.dreamRole || 'fullstack',
         skills: dbUser.skills || [],
         portfolioPublic: dbUser.portfolioPublic ?? false,
+        githubUrl: dbUser.githubUrl || '',
+        linkedinUrl: dbUser.linkedinUrl || '',
+        resumeUrl: dbUser.resumeUrl || '',
       };
       const adaptive = generateAdaptiveDashboard(updatedUser);
       

@@ -236,3 +236,80 @@ export async function getPublicPortfolioData(usernameParam: string) {
     return null;
   }
 }
+
+/**
+ * Updates the current user's professional links (GitHub, LinkedIn, Resume URL).
+ */
+export async function updateProfessionalLinks(data: {
+  githubUrl?: string;
+  linkedinUrl?: string;
+  resumeUrl?: string;
+}) {
+  let userId: string | null = null;
+
+  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    const session = await auth();
+    userId = session.userId;
+  } else if (process.env.NODE_ENV === "development") {
+    userId = "mock-developer-id";
+  }
+
+  if (!userId) {
+    throw new Error("Unauthenticated user attempt.");
+  }
+
+  try {
+    return await prisma.user.update({
+      where: { clerkId: userId },
+      data: {
+        githubUrl: data.githubUrl ?? null,
+        linkedinUrl: data.linkedinUrl ?? null,
+        resumeUrl: data.resumeUrl ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to update professional links:", error);
+    if (process.env.NODE_ENV === "development") {
+      return {
+        clerkId: userId,
+        githubUrl: data.githubUrl,
+        linkedinUrl: data.linkedinUrl,
+        resumeUrl: data.resumeUrl,
+      };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Retrieves the current user's professional links from the database.
+ */
+export async function getProfessionalLinks() {
+  let userId: string | null = null;
+
+  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    const session = await auth();
+    userId = session.userId;
+  } else if (process.env.NODE_ENV === "development") {
+    userId = "mock-developer-id";
+  }
+
+  if (!userId) {
+    return null;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: {
+        githubUrl: true,
+        linkedinUrl: true,
+        resumeUrl: true,
+      },
+    });
+    return user;
+  } catch (error) {
+    console.error("Failed to fetch professional links:", error);
+    return null;
+  }
+}

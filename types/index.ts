@@ -7,6 +7,9 @@ export interface User {
   careerGoal?: string;
   skills: string[];
   portfolioPublic?: boolean;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  resumeUrl?: string;
 }
 
 export interface OnboardingData {
