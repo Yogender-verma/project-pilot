@@ -10,6 +10,7 @@ model User {
   id                  String         @id @default(cuid())
   clerkId             String         @unique
   fullName            String?
+  username            String?        @unique
   email               String         @unique
   imageUrl            String?
   dreamRole           String?
@@ -19,6 +20,7 @@ model User {
   resumeUrl           String?
   dailyStudyTime      Int?
   onboardingCompleted Boolean        @default(false)
+  portfolioPublic     Boolean        @default(false)
   projects            Project[]
   notifications       Notification[]
   activities          Activity[]
