@@ -430,3 +430,18 @@ div:has(> .cl-devMode) {
   background-color: var(--surface-secondary) !important;
 }
 
+/* ── Spinning gradient card border animation ── */
+@keyframes rotate-slow {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: rotate-slow 8s linear infinite;
+}
+
+
