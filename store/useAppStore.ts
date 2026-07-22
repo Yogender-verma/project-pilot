@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'react-hot-toast';
 import { 
   User, 
   OnboardingData, 
@@ -771,6 +772,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
           })
         });
 
+        if (response.status === 429) {
+          throw new Error('RATE_LIMIT_EXCEEDED');
+        }
+
         if (!response.ok || !response.body) throw new Error('Failed to fetch AI response');
 
         const reader = response.body.getReader();
@@ -799,12 +804,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       } catch (error) {
         console.error('AI Streaming Error:', error);
+        const isRateLimit = error instanceof Error && error.message === 'RATE_LIMIT_EXCEEDED';
+        const errorMessage = isRateLimit 
+          ? 'You have exceeded the rate limit of 10 requests per minute. Please wait a moment and try again.'
+          : 'Sorry, I encountered an error. Please check your API key and try again.';
+          
+        if (isRateLimit) {
+          toast.error('Too many requests. Please try again in a minute.');
+        }
+
         set((s) => ({
           conversations: s.conversations.map((c) => {
             if (c.id === activeId) {
               return {
                 ...c,
-                messages: c.messages.map(m => m.id === aiMessageId ? { ...m, content: 'Sorry, I encountered an error. Please check your API key and try again.' } : m)
+                messages: c.messages.map(m => m.id === aiMessageId ? { ...m, content: errorMessage } : m)
               };
             }
             return c;

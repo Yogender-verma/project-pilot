@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
 import { ThemeProvider } from '@/lib/ThemeProvider';
+import { Toaster } from 'react-hot-toast';
 import Script from 'next/script';
 import "./globals.css";
 
@@ -34,6 +35,7 @@ export default function RootLayout({
       >
         <body className="min-h-full flex flex-col" suppressHydrationWarning>
           <ThemeProvider>
+            <Toaster position="top-right" />
             {children}
           </ThemeProvider>
         </body>
