@@ -13,13 +13,13 @@ test.describe('E2E Test Suite', () => {
     await page.goto('/dashboard/projects');
     
     // Wait for the projects page to load with automatic retry/waiting
-    await expect(page.locator('text="Projects"').first()).toBeVisible();
+    await expect(page.getByText('Projects').first()).toBeVisible();
   });
 
   test('Sending a message to the AI Mentor', async ({ page }) => {
     await page.goto('/dashboard/mentor');
     
     // Wait for the mentor chat interface to load with automatic retry/waiting
-    await expect(page.locator('text="Mentor"').first()).toBeVisible();
+    await expect(page.getByText('Mentor').first()).toBeVisible();
   });
 });
