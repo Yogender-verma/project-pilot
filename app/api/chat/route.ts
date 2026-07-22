@@ -79,7 +79,7 @@ Respond directly to the user's latest query based on the conversation history.`;
 
     // Gemini strictly requires the first message to be from the user.
     // We strip out any leading 'assistant' messages from the conversation history.
-    let validMessages = [...messages];
+    const validMessages = [...messages];
     while (validMessages.length > 0 && validMessages[0].role === 'assistant') {
       validMessages.shift();
     }

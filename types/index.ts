@@ -12,9 +12,6 @@ export interface User {
 
   skills: string[];
   portfolioPublic?: boolean;
-  githubUrl?: string;
-  linkedinUrl?: string;
-  resumeUrl?: string;
 }
 
 export interface OnboardingData {
