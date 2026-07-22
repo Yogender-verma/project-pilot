@@ -18,23 +18,30 @@ import {
   AlertCircle,
   Camera,
   Loader2,
+  Plus,
+  X,
   Globe,
   Copy,
   ExternalLink,
-  Check
+  Check,
+  Download,
+  Upload
 } from 'lucide-react';
 import { Github, Linkedin } from '@/components/ui/BrandIcons';
 import { useAppStore } from '@/store/useAppStore';
+import { getProfessionalLinks, updateProfessionalLinks } from '@/app/actions/user';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useTheme } from '@/lib/ThemeProvider';
 import type { Theme } from '@/lib/ThemeProvider';
+import { updateUserSkillsInDb } from '@/app/actions/user';
+import { extractSkillsFromResume } from '@/app/actions/extractSkills';
 
 // Client API Handlers
 export default function SettingsPage() {
-  const { user, onboardingData, updateProfile, updateAvatar, updatePortfolioVisibility, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub } = useAppStore();
+  const { user, onboardingData, updateProfile, updateAvatar, updatePortfolioVisibility, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub, updateUserSkills } = useAppStore();
 
   // Access the global theme state & setTheme so the user can pick directly
   const { theme, setTheme } = useTheme();
@@ -112,6 +119,71 @@ export default function SettingsPage() {
       navigator.clipboard.writeText(portfolioUrl);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
+  // Skills management states
+  const [localSkills, setLocalSkills] = useState<string[]>(user?.skills || []);
+  const [newSkill, setNewSkill] = useState('');
+  const [resumeText, setResumeText] = useState('');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractError, setExtractError] = useState<string | null>(null);
+  const [extractSuccess, setExtractSuccess] = useState<string | null>(null);
+  const [skillsSaveSuccess, setSkillsSaveSuccess] = useState(false);
+  const [skillsSaveLoading, setSkillsSaveLoading] = useState(false);
+
+  const handleAddSkill = () => {
+    const clean = newSkill.trim();
+    if (clean && !localSkills.includes(clean)) {
+      setLocalSkills([...localSkills, clean]);
+      setNewSkill('');
+    }
+  };
+
+  const handleRemoveSkill = (skill: string) => {
+    setLocalSkills(localSkills.filter(s => s !== skill));
+  };
+
+  const handleExtractSkillsInSettings = async () => {
+    if (!resumeText.trim()) {
+      setExtractError('Please paste some resume text first.');
+      return;
+    }
+    setIsExtracting(true);
+    setExtractError(null);
+    setExtractSuccess(null);
+
+    try {
+      const result = await extractSkillsFromResume(resumeText);
+      if (result.success && result.skills && result.skills.length > 0) {
+        const currentSkills = new Set(localSkills);
+        result.skills.forEach((skill) => currentSkills.add(skill));
+        setLocalSkills(Array.from(currentSkills));
+        setExtractSuccess(`Extracted and merged ${result.skills.length} skills!`);
+        setResumeText('');
+      } else {
+        setExtractError(result.error || 'No tech skills could be identified in the text.');
+      }
+    } catch (err) {
+      console.error(err);
+      setExtractError('Failed to extract skills.');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const handleSaveSkills = async () => {
+    setSkillsSaveLoading(true);
+    setSkillsSaveSuccess(false);
+    try {
+      updateUserSkills(localSkills);
+      await updateUserSkillsInDb(localSkills);
+      setSkillsSaveSuccess(true);
+      setTimeout(() => setSkillsSaveSuccess(false), 2000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSkillsSaveLoading(false);
     }
   };
 
@@ -244,6 +316,58 @@ export default function SettingsPage() {
 
   const [gitUsername, setGitUsername] = useState(githubAnalytics.username || '');
   const [gitLoading, setGitLoading] = useState(false);
+
+  // Data Management states
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/settings/export');
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `project-pilot-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+
+      const response = await fetch('/api/settings/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error('Import failed');
+      
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsImporting(false);
+      if (importFileRef.current) importFileRef.current.value = '';
+    }
+  };
 
   // Toggle Git Connection
   const handleToggleGithub = async () => {
@@ -543,63 +667,193 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
+          {/* ─── SKILLS PORTFOLIO & AI EXTRACTION ───────────────────────── */}
           <Card hoverEffect={false}>
-    <CardHeader>
-        <CardTitle>
-            Professional Links
-        </CardTitle>
+            <CardHeader>
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <span>Skills Portfolio</span>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                  AI Automated
+                </span>
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Manage your technical skills or paste your resume text to extract skills automatically using AI.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-1">
+              
+              {/* Removable Skills Badges */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Active Technical Skills
+                </label>
+                <div className="flex flex-wrap gap-1.5 border border-white/5 bg-white/2 rounded-xl p-3 min-h-12">
+                  {localSkills.length === 0 ? (
+                    <span className="text-xs text-slate-500 italic">No skills added yet. Add custom skills or paste resume below.</span>
+                  ) : (
+                    localSkills.map((skill) => (
+                      <Badge 
+                        key={skill} 
+                        variant="glow"
+                        className="pr-1.5 flex items-center space-x-1.5"
+                      >
+                        <span>{skill}</span>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveSkill(skill)} 
+                          className="hover:text-rose-400 shrink-0 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </Badge>
+                    ))
+                  )}
+                </div>
+              </div>
 
-        <CardDescription>
-            Manage your GitHub, LinkedIn and Resume URLs.
-        </CardDescription>
-    </CardHeader>
+              {/* Manual entry row */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  placeholder="Enter custom skill manually..."
+                  value={newSkill}
+                  onChange={(e) => setNewSkill(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddSkill();
+                    }
+                  }}
+                  className="flex-1 bg-[#0a071a]/50 text-slate-100 placeholder-slate-500 text-xs rounded-xl border border-white/10 px-4 py-2.5 focus:outline-none focus:border-indigo-500/80"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleAddSkill}
+                  className="h-10 px-3 rounded-xl flex items-center justify-center border-white/10 text-slate-300 hover:text-white"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add
+                </Button>
+              </div>
 
-    <CardContent className="space-y-4">
+              {/* AI Resume Skill Extractor Container */}
+              <div className="rounded-xl border border-indigo-500/20 bg-indigo-950/20 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
+                    <span>Quick Extract from Resume</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400">AI ATS Parser</span>
+                </div>
 
-        <Input
-            label="GitHub URL"
-            value={githubUrl}
-            onChange={(e)=>setGithubUrl(e.target.value)}
-        />
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Paste the text of your resume below. Pilot AI will automatically extract technical skills (languages, frameworks, tools) and merge them into your portfolio.
+                </p>
 
-        <Input
-            label="LinkedIn URL"
-            value={linkedinUrl}
-            onChange={(e)=>setLinkedinUrl(e.target.value)}
-        />
+                <textarea
+                  rows={4}
+                  placeholder="Paste resume text here..."
+                  value={resumeText}
+                  onChange={(e) => setResumeText(e.target.value)}
+                  className="w-full bg-[#070517] text-xs text-white placeholder-slate-500 p-3 rounded-xl border border-indigo-500/20 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition resize-none"
+                />
 
-        <Input
-            label="Resume URL"
-            value={resumeUrl}
-            onChange={(e)=>setResumeUrl(e.target.value)}
-        />
+                <div className="flex items-center justify-between">
+                  <div>
+                    {extractError && <p className="text-xs text-rose-400 font-medium">{extractError}</p>}
+                    {extractSuccess && <p className="text-xs text-emerald-400 font-medium">{extractSuccess}</p>}
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleExtractSkillsInSettings}
+                    disabled={isExtracting}
+                    variant="premium"
+                    size="sm"
+                    className="h-9 px-4 text-xs font-semibold"
+                  >
+                    {isExtracting ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                        Extracting...
+                      </>
+                    ) : (
+                      'Extract & Merge Skills'
+                    )}
+                  </Button>
+                </div>
+              </div>
 
-        {linksError && (
-            <p className="text-xs text-red-500">
-                {linksError}
-            </p>
-        )}
+              {/* Save Trigger */}
+              <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                {skillsSaveSuccess && (
+                  <span className="text-xs text-emerald-400 font-semibold flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-1.5 animate-bounce" />
+                    Skills portfolio saved successfully!
+                  </span>
+                )}
+                <Button
+                  type="button"
+                  onClick={handleSaveSkills}
+                  disabled={skillsSaveLoading}
+                  variant="premium"
+                  className="h-11 px-6 ml-auto text-xs font-semibold"
+                >
+                  {skillsSaveLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Skills Changes'
+                  )}
+                </Button>
+              </div>
 
-        {linksSuccess && (
-            <p className="text-xs text-green-500">
-                Links updated successfully.
-            </p>
-        )}
+            </CardContent>
+          </Card>
 
-        <Button
-            onClick={handleSaveLinks}
-            disabled={linksLoading}
-            variant="premium"
-            className="mt-2"
-        >
-            {linksLoading
-                ? "Saving..."
-                : "Save Professional Links"}
-        </Button>
-
-    </CardContent>
-</Card>
-
+          {/* ─── PROFESSIONAL LINKS ──────────────────────────────────────── */}
+          <Card hoverEffect={false}>
+            <CardHeader>
+              <CardTitle>Professional Links</CardTitle>
+              <CardDescription>Manage your GitHub, LinkedIn, and Resume URLs.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                label="GitHub URL"
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+              />
+              <Input
+                label="LinkedIn URL"
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+              />
+              <Input
+                label="Resume URL"
+                value={resumeUrl}
+                onChange={(e) => setResumeUrl(e.target.value)}
+              />
+              {linksError && (
+                <p className="text-xs text-red-500">
+                  {linksError}
+                </p>
+              )}
+              {linksSuccess && (
+                <p className="text-xs text-green-500">
+                  Links updated successfully.
+                </p>
+              )}
+              <Button
+                onClick={handleSaveLinks}
+                disabled={linksLoading}
+                variant="premium"
+                className="mt-2"
+              >
+                {linksLoading ? "Saving..." : "Save Professional Links"}
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* ─── NOTIFICATION PREFERENCES ────────────────────────────────── */}
           <Card hoverEffect={false}>
@@ -749,6 +1003,70 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <Badge variant="glow">Active</Badge>
+              </div>
+
+            </CardContent>
+          </Card>
+
+          {/* ─── DATA MANAGEMENT ───────────────────────── */}
+          <Card hoverEffect={false}>
+            <CardHeader>
+              <CardTitle className="text-base font-bold text-indigo-300">Data Management</CardTitle>
+              <CardDescription className="text-xs">Export or import your profile and projects data.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-1">
+              
+              <div className="p-3.5 bg-indigo-500/5 rounded-xl border border-indigo-500/10 flex flex-col space-y-3.5 text-xs text-slate-400">
+                <div>
+                  <h4 className="font-bold flex items-center text-slate-200">
+                    <Download className="w-4 h-4 mr-1 text-indigo-400" />
+                    Export Data
+                  </h4>
+                  <p className="text-[10px] leading-relaxed mt-1">
+                    Download a JSON file containing your profile, active projects, and roadmap milestones.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportData}
+                    disabled={isExporting}
+                    className="h-9 text-[10px] border-indigo-500/30 hover:bg-indigo-500/10 hover:text-white"
+                  >
+                    {isExporting ? 'Exporting...' : 'Download JSON Data'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-indigo-500/5 rounded-xl border border-indigo-500/10 flex flex-col space-y-3.5 text-xs text-slate-400">
+                <div>
+                  <h4 className="font-bold flex items-center text-slate-200">
+                    <Upload className="w-4 h-4 mr-1 text-indigo-400" />
+                    Import Data
+                  </h4>
+                  <p className="text-[10px] leading-relaxed mt-1">
+                    Restore your profile and projects from a previously exported JSON file.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <input
+                    type="file"
+                    accept=".json"
+                    ref={importFileRef}
+                    className="hidden"
+                    onChange={handleImportData}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => importFileRef.current?.click()}
+                    disabled={isImporting}
+                    className="h-9 text-[10px] border-indigo-500/30 hover:bg-indigo-500/10 hover:text-white"
+                  >
+                    {isImporting ? 'Importing...' : 'Upload JSON Data'}
+                  </Button>
+                </div>
               </div>
 
             </CardContent>
