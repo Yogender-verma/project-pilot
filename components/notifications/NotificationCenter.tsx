@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import FocusTrap from 'focus-trap-react';
 import {
   AlertTriangle,
   Bell,
@@ -108,6 +109,7 @@ export function NotificationCenter({ mobile = false }: { mobile?: boolean }) {
         onClick={openPanel}
         aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
         aria-expanded={open}
+        aria-controls="notification-dialog"
         className={mobile ? 'p-1.5 rounded-lg relative' : 'p-2 rounded-xl border relative'}
         style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-subtle)' }}
       >
@@ -120,12 +122,14 @@ export function NotificationCenter({ mobile = false }: { mobile?: boolean }) {
       </button>
 
       {open && (
-        <div
-          role="dialog"
-          aria-label="Notifications"
-          className={`fixed left-3 right-3 top-16 z-[80] max-h-[75vh] overflow-hidden rounded-2xl border shadow-2xl md:absolute md:left-auto md:right-0 md:top-auto md:mt-3 md:w-[390px] ${mobile ? '' : ''}`}
-          style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
-        >
+        <FocusTrap focusTrapOptions={{ clickOutsideDeactivates: true, escapeDeactivates: false }}>
+          <div
+            id="notification-dialog"
+            role="dialog"
+            aria-label="Notifications"
+            className={`fixed left-3 right-3 top-16 z-[80] max-h-[75vh] overflow-hidden rounded-2xl border shadow-2xl md:absolute md:left-auto md:right-0 md:top-auto md:mt-3 md:w-[390px] ${mobile ? '' : ''}`}
+            style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
+          >
           <div className="flex items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: 'var(--border-subtle)' }}>
             <div>
               <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Notifications</h2>
@@ -198,6 +202,7 @@ export function NotificationCenter({ mobile = false }: { mobile?: boolean }) {
             )}
           </div>
         </div>
+        </FocusTrap>
       )}
     </div>
   );

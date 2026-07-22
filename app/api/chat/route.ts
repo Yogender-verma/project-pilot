@@ -1,5 +1,8 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText } from 'ai';
+import { auth } from '@clerk/nextjs/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;

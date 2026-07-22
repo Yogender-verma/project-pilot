@@ -2,20 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search, 
-  ChevronDown, 
-  FolderGit2, 
-  Clock, 
-  Award, 
-  Sparkles, 
-  Cpu, 
-  ArrowUpRight, 
-  Check,
-  TrendingUp,
-  BrainCircuit
-} from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowUpRight, Check, Clock, FolderGit2, TrendingUp, Plus, Search } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -30,6 +18,7 @@ import {
 } from '@/components/projects/ProjectControls';
 import type { Project } from '@/types';
 import { EmptyState } from '@/components/ui/EmptyState';
+import Link from 'next/link';
 
 const DEFAULT_STATUS: ProjectStatusFilter = 'All';
 const DEFAULT_SORT: ProjectSort = 'recent';
@@ -100,8 +89,7 @@ export default function RecommendedProjectsPage() {
 
   return (
     <div className="space-y-8 pb-12">
-      {/* Title Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
             <FolderGit2 className="w-6 h-6 text-indigo-400" />
@@ -112,10 +100,22 @@ export default function RecommendedProjectsPage() {
           </p>
         </div>
 
-        {/* Top summary badge */}
-        <Badge variant="glow" className="w-fit self-start sm:self-center font-bold px-3 py-1 font-mono">
-          🛩 ACTIVE TARGET: {projects.length} OPTIONS LOADED
-        </Badge>
+        <div className="flex flex-wrap items-center gap-3 self-start sm:self-center">
+          <Link href="/dashboard/projects/create">
+            <Button
+              variant="premium"
+              size="sm"
+              className="h-10 px-4 text-xs font-bold shadow-md shadow-indigo-500/20"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Create Project
+            </Button>
+          </Link>
+
+          <Badge variant="glow" className="w-fit px-3 py-1 font-mono font-bold">
+            🛩 ACTIVE TARGET: {projects.length} OPTIONS LOADED
+          </Badge>
+        </div>
       </div>
 
       {/* Filter and Search Action Box */}
