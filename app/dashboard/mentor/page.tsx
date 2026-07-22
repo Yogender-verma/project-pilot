@@ -47,6 +47,11 @@ export default function AiMentorChatPage() {
   // Retrieve active conversation
   const activeConv = conversations.find((c) => c.id === activeConversationId) || conversations[0];
 
+  // Auto scroll to bottom on new messages
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeConv?.messages]);
+
   // early return for distraction-free Reading Mode
   if (isReadingMode && activeReadingMessageId) {
     const readingMsg = activeConv?.messages.find((m) => m.id === activeReadingMessageId);
@@ -172,10 +177,7 @@ export default function AiMentorChatPage() {
     }
   }
 
-  // Auto scroll to bottom on new messages
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeConv?.messages]);
+
 
   // Handle typing input submit
   const handleSend = () => {
