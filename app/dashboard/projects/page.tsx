@@ -3,14 +3,14 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowUpRight, Check, Clock, FolderGit2, TrendingUp, Plus } from 'lucide-react';
-import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
+import { ArrowUpRight, Check, Clock, FolderGit2, TrendingUp, Plus, Search } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import Link from 'next/link';
 
 export default function RecommendedProjectsPage() {
   const router = useRouter();
@@ -46,15 +46,8 @@ export default function RecommendedProjectsPage() {
     return b.duration.localeCompare(a.duration);
   });
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
   return (
     <div className="space-y-8 pb-12">
-      <CreateProjectModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-      />
-
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
@@ -67,15 +60,16 @@ export default function RecommendedProjectsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 self-start sm:self-center">
-          <Button
-            variant="premium"
-            size="sm"
-            onClick={() => setIsCreateModalOpen(true)}
-            className="h-10 px-4 text-xs font-bold shadow-md shadow-indigo-500/20"
-          >
-            <Plus className="w-4 h-4 mr-1.5" />
-            Create Project
-          </Button>
+          <Link href="/dashboard/projects/create">
+            <Button
+              variant="premium"
+              size="sm"
+              className="h-10 px-4 text-xs font-bold shadow-md shadow-indigo-500/20"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Create Project
+            </Button>
+          </Link>
 
           <Badge variant="glow" className="w-fit px-3 py-1 font-mono font-bold">
             🛩 ACTIVE TARGET: {projects.length} OPTIONS LOADED

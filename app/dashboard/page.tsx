@@ -29,25 +29,28 @@ import {
   Cpu,
   FileText,
   GitMerge,
-  Sparkles,
-  Plus
+  Info,
+  Sparkles
 } from 'lucide-react';
-import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import React from 'react';
-import {
-  Bar,
-  BarChart,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from 'recharts';
+
+const SkillRadarChart = dynamic(
+  () => import('@/components/charts/SkillRadarChart'),
+  {
+    ssr: false,
+    loading: () => <RadarChartSkeleton />,
+  }
+);
+
+const CommitBarChart = dynamic(
+  () => import('@/components/charts/CommitBarChart'),
+  {
+    ssr: false,
+    loading: () => <BarChartSkeleton />,
+  }
+);
 
 export default function MainDashboardPage() {
   const {
@@ -84,15 +87,8 @@ export default function MainDashboardPage() {
   );
   const activeRecommendedProject = projects[0]; // OmniAI Agentic Dashboard
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
-
   return (
     <div className="space-y-8 pb-12">
-      <CreateProjectModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-      />
-
       {/* Welcome Banner */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
@@ -128,22 +124,11 @@ export default function MainDashboardPage() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto shrink-0">
-          <Button
-            variant="premium"
-            className="w-full sm:w-auto h-12 px-5 font-bold"
-            onClick={() => setIsCreateModalOpen(true)}
-            leftIcon={<Plus className="w-4 h-4" />}
-          >
-            New Project
+        <Link href="/dashboard/projects" className="shrink-0 w-full md:w-auto">
+          <Button variant="glow" className="w-full h-12 px-5" rightIcon={<ArrowUpRight className="w-4.5 h-4.5" />}>
+            View Blueprints
           </Button>
-
-          <Link href="/dashboard/projects" className="w-full sm:w-auto">
-            <Button variant="glow" className="w-full h-12 px-5" rightIcon={<ArrowUpRight className="w-4.5 h-4.5" />}>
-              View Blueprints
-            </Button>
-          </Link>
-        </div>
+        </Link>
       </motion.div>
 
       {/* Main Core Widgets Grid */}

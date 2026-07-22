@@ -380,10 +380,11 @@ export function CommandPalette({
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/10 px-4 py-3 text-[11px] text-slate-500 sm:px-5">
-          <span>â†‘â†“ Navigate</span>
+          <span>↑↓ Navigate</span>
           <span>Enter Open</span>
           <span>Esc Close</span>
-          <span className="ml-auto">Ctrl/âŒ˜ + K</span>
+          <span className="ml-auto">Ctrl/⌘ + K</span>
+        </div>
         </div>
       </FocusTrap>
     </div>
