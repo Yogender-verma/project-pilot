@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { Github, Linkedin } from '@/components/ui/BrandIcons';
 import { useAppStore } from '@/store/useAppStore';
+import { getProfessionalLinks, updateProfessionalLinks } from '@/app/actions/user';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -34,7 +35,7 @@ import type { Theme } from '@/lib/ThemeProvider';
 
 // Client API Handlers
 export default function SettingsPage() {
-  const { user, onboardingData, updateProfile, updateAvatar, updatePortfolioVisibility, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub } = useAppStore();
+  const { user, onboardingData, updateProfile, updateAvatar, updatePortfolioVisibility, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub, updateProfessionalLinks: updateLinksStore } = useAppStore();
 
   // Access the global theme state & setTheme so the user can pick directly
   const { theme, setTheme } = useTheme();
