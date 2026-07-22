@@ -30,26 +30,26 @@ import {
   FileText,
   GitMerge,
   Info,
-  Sparkles,
-} from "lucide-react";
-import dynamic from "next/dynamic";
-import Link from "next/link";
-import React from "react";
+  Sparkles
+} from 'lucide-react';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
+import React from 'react';
 
 const SkillRadarChart = dynamic(
-  () => import("@/components/charts/SkillRadarChart"),
+  () => import('@/components/charts/SkillRadarChart'),
   {
     ssr: false,
     loading: () => <RadarChartSkeleton />,
-  },
+  }
 );
 
 const CommitBarChart = dynamic(
-  () => import("@/components/charts/CommitBarChart"),
+  () => import('@/components/charts/CommitBarChart'),
   {
     ssr: false,
     loading: () => <BarChartSkeleton />,
-  },
+  }
 );
 
 export default function MainDashboardPage() {
@@ -125,12 +125,8 @@ export default function MainDashboardPage() {
         </div>
 
         <Link href="/dashboard/projects" className="shrink-0 w-full md:w-auto">
-          <Button
-            variant="premium"
-            className="w-full h-12"
-            rightIcon={<ArrowUpRight className="w-4.5 h-4.5" />}
-          >
-            View Recommendations
+          <Button variant="glow" className="w-full h-12 px-5" rightIcon={<ArrowUpRight className="w-4.5 h-4.5" />}>
+            View Blueprints
           </Button>
         </Link>
       </motion.div>

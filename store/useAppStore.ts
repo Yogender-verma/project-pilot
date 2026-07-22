@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'react-hot-toast';
 import { 
   User, 
   OnboardingData, 
@@ -290,6 +291,7 @@ interface AppStore {
   selectedProjectId: string | null;
   setProjects: (projects: Project[]) => void;
   selectProject: (id: string | null) => void;
+  addCustomProject: (project: Project) => void;
 
   // Project Activity State
   activities: ProjectActivity[];
@@ -543,6 +545,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
   selectedProjectId: 'project-1',
   setProjects: (projects) => set({ projects }),
   selectProject: (id) => set({ selectedProjectId: id }),
+  addCustomProject: (newProject) => set((state) => {
+    const updatedProjects = [newProject, ...state.projects];
+    saveProjectToDb({
+      id: newProject.id,
+      title: newProject.title,
+      description: newProject.description || undefined,
+      status: newProject.status || 'Planned',
+      progress: newProject.progress || 0,
+      tags: newProject.technologies || [],
+    });
+    createActivityInDb(newProject.id, `Created project: ${newProject.title}`, 'project_created');
+    const newActivity: ProjectActivity = {
+      id: `activity-${Date.now()}`,
+      type: 'project_created',
+      description: `Created project: ${newProject.title}`,
+      projectId: newProject.id,
+      projectTitle: newProject.title,
+      createdAt: new Date().toISOString(),
+    };
+    return {
+      projects: updatedProjects,
+      selectedProjectId: newProject.id,
+      activities: [newActivity, ...state.activities]
+    };
+  }),
 
   // Project Activity State
   activities: [],
@@ -771,6 +798,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
           })
         });
 
+        if (response.status === 429) {
+          throw new Error('RATE_LIMIT_EXCEEDED');
+        }
+
         if (!response.ok || !response.body) throw new Error('Failed to fetch AI response');
 
         const reader = response.body.getReader();
@@ -799,12 +830,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       } catch (error) {
         console.error('AI Streaming Error:', error);
+        const isRateLimit = error instanceof Error && error.message === 'RATE_LIMIT_EXCEEDED';
+        const errorMessage = isRateLimit 
+          ? 'You have exceeded the rate limit of 10 requests per minute. Please wait a moment and try again.'
+          : 'Sorry, I encountered an error. Please check your API key and try again.';
+          
+        if (isRateLimit) {
+          toast.error('Too many requests. Please try again in a minute.');
+        }
+
         set((s) => ({
           conversations: s.conversations.map((c) => {
             if (c.id === activeId) {
               return {
                 ...c,
-                messages: c.messages.map(m => m.id === aiMessageId ? { ...m, content: 'Sorry, I encountered an error. Please check your API key and try again.' } : m)
+                messages: c.messages.map(m => m.id === aiMessageId ? { ...m, content: errorMessage } : m)
               };
             }
             return c;

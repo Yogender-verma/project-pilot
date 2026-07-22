@@ -190,6 +190,8 @@ export default function DashboardLayout({
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Open navigation drawer"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-drawer"
               className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
               style={{
                 borderColor: 'var(--border-subtle)',
