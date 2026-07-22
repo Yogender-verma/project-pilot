@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'react-hot-toast';
 import { 
   User, 
   OnboardingData, 
@@ -19,10 +20,15 @@ import { toggleProjectMilestoneInDb, createActivityInDb, saveProjectToDb } from 
 const DEFAULT_USER: User = {
   id: 'user-yogender',
   name: 'Yogender Verma',
+  username: 'yogender-verma',
   email: 'yogendarverma0268@gmail.com',
   avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80',
   careerGoal: 'AI Engineer',
-  skills: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS']
+  skills: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS'],
+  portfolioPublic: false,
+  githubUrl: '',
+  linkedinUrl: '',
+  resumeUrl: '',
 };
 
 const initialAdaptive = generateAdaptiveDashboard(DEFAULT_USER);
@@ -271,7 +277,13 @@ interface AppStore {
   logout: () => void;
   updateProfile: (name: string, email: string, careerGoal: string) => void;
   updateAvatar: (avatarUrl: string) => void;
+  updateProfessionalLinks: (
+    githubUrl: string,
+    linkedinUrl: string,
+    resumeUrl: string
+  ) => void;
   updateUserSkills: (skills: string[]) => void;
+  updatePortfolioVisibility: (portfolioPublic: boolean, username?: string) => void;
   syncUserProfile: (dbUser: any) => void;
 
   // Projects State
@@ -279,6 +291,7 @@ interface AppStore {
   selectedProjectId: string | null;
   setProjects: (projects: Project[]) => void;
   selectProject: (id: string | null) => void;
+  addCustomProject: (project: Project) => void;
 
   // Project Activity State
   activities: ProjectActivity[];
@@ -293,6 +306,8 @@ interface AppStore {
   // Chat State
   conversations: ChatConversation[];
   activeConversationId: string | null;
+  isRoastMode: boolean;
+  toggleRoastMode: () => void;
   sendMessage: (content: string, codeSnippet?: { language: string; code: string }, attachments?: { name: string; size: string; type: string }[]) => void;
   createNewConversation: (title?: string) => string;
   selectConversation: (id: string) => void;
@@ -356,6 +371,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       email: email || '',
       avatarUrl: '',
       careerGoal: 'fullstack',
+      githubUrl: '',
+      linkedinUrl: '',
+      resumeUrl: '',
       skills: []
     };
     const adaptive = generateAdaptiveDashboard(newUser);
@@ -374,6 +392,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       email: email || '',
       avatarUrl: '',
       careerGoal: careerGoal || 'fullstack',
+      githubUrl: '',
+      linkedinUrl: '',
+      resumeUrl: '',
       skills: []
     };
     const adaptive = generateAdaptiveDashboard(newUser);
@@ -408,6 +429,23 @@ export const useAppStore = create<AppStore>((set, get) => ({
       githubAnalytics: { ...state.githubAnalytics, recruiterInsights: adaptive.insights }
     };
   }),
+  updateProfessionalLinks: (
+    githubUrl,
+    linkedinUrl,
+    resumeUrl
+) =>
+    set((state) => {
+        if (!state.user) return {};
+
+        return {
+            user: {
+                ...state.user,
+                githubUrl,
+                linkedinUrl,
+                resumeUrl,
+            },
+        };
+    }),
   updateUserSkills: (skills) => set((state) => {
     if (!state.user) return {};
     const updatedUser = { ...state.user, skills };
@@ -419,16 +457,30 @@ export const useAppStore = create<AppStore>((set, get) => ({
       githubAnalytics: { ...state.githubAnalytics, recruiterInsights: adaptive.insights }
     };
   }),
+  updatePortfolioVisibility: (portfolioPublic, username) => set((state) => {
+    if (!state.user) return {};
+    const updatedUser = {
+      ...state.user,
+      portfolioPublic,
+      ...(username ? { username } : {}),
+    };
+    return { user: updatedUser };
+  }),
   syncUserProfile: (dbUser) => {
     if (!dbUser) return;
     set((state) => {
       const updatedUser = {
         id: dbUser.clerkId || dbUser.id || '',
         name: dbUser.fullName || dbUser.email?.split('@')[0] || 'Anonymous User',
+        username: dbUser.username || dbUser.fullName?.toLowerCase().replace(/\s+/g, '-') || 'yogender-verma',
         email: dbUser.email || '',
         avatarUrl: dbUser.imageUrl || '',
         careerGoal: dbUser.dreamRole || 'fullstack',
-        skills: dbUser.skills || []
+        skills: dbUser.skills || [],
+        portfolioPublic: dbUser.portfolioPublic ?? false,
+        githubUrl: dbUser.githubUrl || '',
+        linkedinUrl: dbUser.linkedinUrl || '',
+        resumeUrl: dbUser.resumeUrl || '',
       };
       const adaptive = generateAdaptiveDashboard(updatedUser);
       
@@ -495,6 +547,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
   selectedProjectId: 'project-1',
   setProjects: (projects) => set({ projects }),
   selectProject: (id) => set({ selectedProjectId: id }),
+  addCustomProject: (newProject) => set((state) => {
+    const updatedProjects = [newProject, ...state.projects];
+    saveProjectToDb({
+      id: newProject.id,
+      title: newProject.title,
+      description: newProject.description || undefined,
+      status: newProject.status || 'Planned',
+      progress: newProject.progress || 0,
+      tags: newProject.technologies || [],
+    });
+    createActivityInDb(newProject.id, `Created project: ${newProject.title}`, 'project_created');
+    const newActivity: ProjectActivity = {
+      id: `activity-${Date.now()}`,
+      type: 'project_created',
+      description: `Created project: ${newProject.title}`,
+      projectId: newProject.id,
+      projectTitle: newProject.title,
+      createdAt: new Date().toISOString(),
+    };
+    return {
+      projects: updatedProjects,
+      selectedProjectId: newProject.id,
+      activities: [newActivity, ...state.activities]
+    };
+  }),
 
   // Project Activity State
   activities: [],
@@ -662,6 +739,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Chat State
   conversations: INITIAL_CONVERSATIONS,
   activeConversationId: 'conv-1',
+  isRoastMode: false,
+  toggleRoastMode: () => set((state) => ({ isRoastMode: !state.isRoastMode })),
   sendMessage: (content, codeSnippet, attachments) => set((state) => {
     const activeId = state.activeConversationId;
     if (!activeId) return {};
@@ -719,9 +798,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: apiMessages,
-            userContext: get().user || DEFAULT_USER
+            userContext: get().user || DEFAULT_USER,
+            isRoastMode: get().isRoastMode
           })
         });
+
+        if (response.status === 429) {
+          throw new Error('RATE_LIMIT_EXCEEDED');
+        }
 
         if (!response.ok || !response.body) throw new Error('Failed to fetch AI response');
 
@@ -751,12 +835,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       } catch (error) {
         console.error('AI Streaming Error:', error);
+        const isRateLimit = error instanceof Error && error.message === 'RATE_LIMIT_EXCEEDED';
+        const errorMessage = isRateLimit 
+          ? 'You have exceeded the rate limit of 10 requests per minute. Please wait a moment and try again.'
+          : 'Sorry, I encountered an error. Please check your API key and try again.';
+          
+        if (isRateLimit) {
+          toast.error('Too many requests. Please try again in a minute.');
+        }
+
         set((s) => ({
           conversations: s.conversations.map((c) => {
             if (c.id === activeId) {
               return {
                 ...c,
-                messages: c.messages.map(m => m.id === aiMessageId ? { ...m, content: 'Sorry, I encountered an error. Please check your API key and try again.' } : m)
+                messages: c.messages.map(m => m.id === aiMessageId ? { ...m, content: errorMessage } : m)
               };
             }
             return c;

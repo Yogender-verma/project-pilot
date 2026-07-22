@@ -1,30 +1,52 @@
 'use client';
 
+import React, { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
+import {
+  Settings,
+  User as UserIcon,
+  Bell,
+  Eye,
+  Sparkles,
+  Trash2,
+  RefreshCw,
+  CheckCircle,
+  Sun,
+  Moon,
+  Monitor,
+  AlertCircle,
+  Camera,
+  Loader2,
+  Plus,
+  X,
+  Globe,
+  Copy,
+  ExternalLink,
+  Check,
+  Download,
+  Upload
+} from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Github, Linkedin } from '@/components/ui/BrandIcons';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import type { Theme } from '@/lib/ThemeProvider';
-import { useTheme } from '@/lib/ThemeProvider';
 import { useAppStore } from '@/store/useAppStore';
-import {
-  Camera,
-  Loader2,
-  Moon,
-  RefreshCw,
-  Settings,
-  Sun,
-  Trash2,
-  User as UserIcon
-} from 'lucide-react';
-import React, { useRef, useState } from 'react';
-import { toast } from "sonner";
-// UploadThing Integrations
-import { updateProfileAvatar } from '@/app/actions/user';
+import { useTheme } from '@/lib/ThemeProvider';
+import { 
+  getProfessionalLinks, 
+  updateProfessionalLinks, 
+  updateUserSkillsInDb, 
+  updateProfileAvatar 
+} from '@/app/actions/user';
+import { extractSkillsFromResume } from '@/app/actions/extractSkills';
+import { toast } from 'sonner'; // Core hook/utility for the global toast system
 
+// Client API Handlers
 export default function SettingsPage() {
-  const { user, onboardingData, updateProfile, updateAvatar, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub } = useAppStore();
+  const { user, onboardingData, updateProfile, updateAvatar, updatePortfolioVisibility, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub, updateUserSkills, updateLinksStore } = useAppStore();
 
   // Access the global theme state & setTheme so the user can pick directly
   const { theme, setTheme } = useTheme();
@@ -33,34 +55,160 @@ export default function SettingsPage() {
   const [profileName, setProfileName] = useState(user?.name || 'yogender verma');
   const [profileEmail, setProfileEmail] = useState(user?.email || 'yogendarverma0268@gmail.com');
   const [profileGoal, setProfileGoal] = useState(user?.careerGoal || 'AI Engineer');
+  const [githubUrl, setGithubUrl] = useState(user?.githubUrl || '');
+  const [linkedinUrl, setLinkedinUrl] = useState(user?.linkedinUrl || '');
+  const [resumeUrl, setResumeUrl] = useState(user?.resumeUrl || '');
+
+  const [linksLoading, setLinksLoading] = useState(false);
+  const [linksSuccess, setLinksSuccess] = useState(false);
+  const [linksError, setLinksError] = useState('');
+  
+  useEffect(() => {
+    async function loadLinks(){
+      try {
+        const data = await getProfessionalLinks();
+        if(!data) return;
+
+        setGithubUrl(data.githubUrl || "");
+        setLinkedinUrl(data.linkedinUrl || "");
+        setResumeUrl(data.resumeUrl || "");
+      } catch(err) {
+        console.error(err);
+      }
+    }
+    loadLinks();
+  }, []);
+
+  // Portfolio Visibility States
+  const [isPortfolioPublic, setIsPortfolioPublic] = useState(user?.portfolioPublic ?? false);
+  const [customHandle, setCustomHandle] = useState(user?.username || user?.name?.toLowerCase().replace(/\s+/g, '-') || 'yogender-verma');
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const portfolioUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/u/${customHandle}`
+    : `https://projectpilot.dev/u/${customHandle}`;
+
+  const handleTogglePortfolioPublic = async () => {
+    const nextState = !isPortfolioPublic;
+    setIsPortfolioPublic(nextState);
+    updatePortfolioVisibility(nextState, customHandle);
+    try {
+      await fetch('/api/settings/portfolio', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ portfolioPublic: nextState, username: customHandle }),
+      });
+    } catch (e) {}
+  };
+
+  const handleSaveHandle = async () => {
+    updatePortfolioVisibility(isPortfolioPublic, customHandle);
+    try {
+      await fetch('/api/settings/portfolio', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ portfolioPublic: isPortfolioPublic, username: customHandle }),
+      });
+    } catch (e) {}
+  };
+
+  const handleCopyPortfolioUrl = () => {
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(portfolioUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
+  // Skills management states
+  const [localSkills, setLocalSkills] = useState<string[]>(user?.skills || []);
+  const [newSkill, setNewSkill] = useState('');
+  const [resumeText, setResumeText] = useState('');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractError, setExtractError] = useState<string | null>(null);
+  const [extractSuccess, setExtractSuccess] = useState<string | null>(null);
+  const [skillsSaveSuccess, setSkillsSaveSuccess] = useState(false);
+  const [skillsSaveLoading, setSkillsSaveLoading] = useState(false);
+
+  const handleAddSkill = () => {
+    const clean = newSkill.trim();
+    if (clean && !localSkills.includes(clean)) {
+      setLocalSkills([...localSkills, clean]);
+      setNewSkill('');
+    }
+  };
+
+  const handleRemoveSkill = (skill: string) => {
+    setLocalSkills(localSkills.filter(s => s !== skill));
+  };
+
+  const handleExtractSkillsInSettings = async () => {
+    if (!resumeText.trim()) {
+      setExtractError('Please paste some resume text first.');
+      return;
+    }
+    setIsExtracting(true);
+    setExtractError(null);
+    setExtractSuccess(null);
+
+    try {
+      const result = await extractSkillsFromResume(resumeText);
+      if (result.success && result.skills && result.skills.length > 0) {
+        const currentSkills = new Set(localSkills);
+        result.skills.forEach((skill) => currentSkills.add(skill));
+        setLocalSkills(Array.from(currentSkills));
+        setExtractSuccess(`Extracted and merged ${result.skills.length} skills!`);
+        setResumeText('');
+      } else {
+        setExtractError(result.error || 'No tech skills could be identified in the text.');
+      }
+    } catch (err) {
+      console.error(err);
+      setExtractError('Failed to extract skills.');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const handleSaveSkills = async () => {
+    setSkillsSaveLoading(true);
+    setSkillsSaveSuccess(false);
+    try {
+      updateUserSkills(localSkills);
+      await updateUserSkillsInDb(localSkills);
+      setSkillsSaveSuccess(true);
+      setTimeout(() => setSkillsSaveSuccess(false), 2000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSkillsSaveLoading(false);
+    }
+  };
 
   // Notification states
   const [notifyWeeklyPlan, setNotifyWeeklyPlan] = useState(true);
   const [notifyMentorReplied, setNotifyMentorReplied] = useState(true);
   const [notifyRecruiterScans, setNotifyRecruiterScans] = useState(false);
 
- 
-
   // --- AVATAR UPLOAD STATE HOOKS ---
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>((user as any)?.imageUrl || null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-
   const isUploading = false; // Mocking uploading state for compatibility
 
-const handleSaveAvatar = async () => {
-  if (!previewUrl) return;
+  const handleSaveAvatar = async () => {
+    if (!previewUrl) return;
 
-  updateAvatar(previewUrl);
+    updateAvatar(previewUrl);
 
-  try {
-    await updateProfileAvatar(previewUrl);
-    toast.success("Avatar updated successfully.");
-    setAvatarFile(null);
-  } catch {
-    toast.error("Failed to update avatar.");
-  }
-};
+    try {
+      await updateProfileAvatar(previewUrl);
+      toast.success("Avatar updated successfully.");
+      setAvatarFile(null);
+    } catch {
+      toast.error("Failed to update avatar.");
+    }
+  };
 
   const handleAvatarSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,13 +217,13 @@ const handleSaveAvatar = async () => {
     // Validate MIME formats
     const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedMimeTypes.includes(file.type)) {
-     toast.error("Format unsupported. Use JPG, PNG or WEBP.");
+      toast.error("Format unsupported. Use JPG, PNG or WEBP.");
       return;
     }
 
     // Enforce 5MB limit
     if (file.size > 5 * 1024 * 1024) {
-       toast.error("Image exceeds the 5MB limit.");
+      toast.error("Image exceeds the 5MB limit.");
       return;
     }
 
@@ -94,44 +242,143 @@ const handleSaveAvatar = async () => {
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile(profileName, profileEmail, profileGoal);
-   toast.success("Profile updated successfully.");
+    toast.success("Profile updated successfully.");
+  };
+
+  const validateUrl = (url: string) => {
+    if (!url) return true;
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleSaveLinks = async () => {
+    if (
+      !validateUrl(githubUrl) ||
+      !validateUrl(linkedinUrl) ||
+      !validateUrl(resumeUrl)
+    ) {
+      setLinksError("Please enter valid URLs.");
+      return;
+    }
+
+    setLinksError("");
+    setLinksLoading(true);
+
+    try {
+      await updateProfessionalLinks({
+        githubUrl,
+        linkedinUrl,
+        resumeUrl,
+      });
+
+      updateLinksStore(
+        githubUrl,
+        linkedinUrl,
+        resumeUrl
+      );
+
+      setLinksSuccess(true);
+      setTimeout(() => {
+        setLinksSuccess(false);
+      }, 2000);
+    } catch {
+      setLinksError("Failed to save links.");
+    } finally {
+      setLinksLoading(false);
+    }
   };
 
   // Reset Onboarding pathway
   const handleResetOnboarding = () => {
     resetOnboarding();
-   toast.success("Onboarding reset successfully.");
+    toast.success("Onboarding reset successfully.");
   };
 
   const [gitUsername, setGitUsername] = useState(githubAnalytics.username || '');
   const [gitLoading, setGitLoading] = useState(false);
 
-  // Toggle Git Connection
- const handleToggleGithub = async () => {
-  if (githubAnalytics.connected) {
+  // Data Management states
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
+
+  const handleExportData = async () => {
+    setIsExporting(true);
     try {
-      disconnectGithub();
-      toast.success("GitHub disconnected.");
-      setGitUsername("");
-    } catch {
-      toast.error("Failed to disconnect GitHub.");
+      const response = await fetch('/api/settings/export');
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `project-pilot-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsExporting(false);
     }
-    return;
-  }
+  };
 
-  if (!gitUsername.trim()) return;
+  const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  setGitLoading(true);
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
 
-  try {
-    await connectGithub(gitUsername.trim());
-    toast.success("GitHub connected successfully.");
-  } catch {
-    toast.error("Failed to connect GitHub.");
-  } finally {
-    setGitLoading(false);
-  }
-};
+      const response = await fetch('/api/settings/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error('Import failed');
+      
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsImporting(false);
+      if (importFileRef.current) importFileRef.current.value = '';
+    }
+  };
+
+  // Toggle Git Connection
+  const handleToggleGithub = async () => {
+    if (githubAnalytics.connected) {
+      try {
+        disconnectGithub();
+        toast.success("GitHub disconnected.");
+        setGitUsername("");
+      } catch {
+        toast.error("Failed to disconnect GitHub.");
+      }
+      return;
+    }
+
+    if (!gitUsername.trim()) return;
+
+    setGitLoading(true);
+
+    try {
+      await connectGithub(gitUsername.trim());
+      toast.success("GitHub connected successfully.");
+    } catch {
+      toast.error("Failed to connect GitHub.");
+    } finally {
+      setGitLoading(false);
+    }
+  };
 
   /** Theme option card definition */
   const themeOptions: { value: Theme; label: string; description: string; icon: React.ReactNode }[] = [
@@ -182,7 +429,14 @@ const handleSaveAvatar = async () => {
               <div className="p-4 bg-white/5 rounded-xl border border-white/5 flex flex-col sm:flex-row items-center gap-6 mb-6 text-xs sm:text-sm">
                 <div className="relative w-20 h-20 rounded-full border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden shrink-0 group">
                   {previewUrl ? (
-                    <img src={previewUrl} alt="Avatar Preview" className="w-full h-full object-cover transition duration-200 group-hover:opacity-75" />
+                    <Image
+                      src={previewUrl}
+                      alt="Profile Avatar Preview"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover transition duration-200 group-hover:opacity-75"
+                      unoptimized={previewUrl.startsWith('data:') || previewUrl.startsWith('blob:')}
+                    />
                   ) : (
                     <UserIcon className="w-8 h-8 text-slate-500" />
                   )}
@@ -241,8 +495,6 @@ const handleSaveAvatar = async () => {
                       </Button>
                     )}
                   </div>
-
-                 
                 </div>
               </div>
               
@@ -274,8 +526,110 @@ const handleSaveAvatar = async () => {
                   leftIcon={<UserIcon className="w-4.5 h-4.5" aria-hidden="true" />}
                 />
 
+                {/* ─── PUBLIC PORTFOLIO VISIBILITY SECTION ───────────────────────── */}
+                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/20 space-y-3 mt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Globe className="w-4.5 h-4.5 text-indigo-400" />
+                      <span className="font-bold text-xs sm:text-sm text-slate-200">Public Portfolio</span>
+                      <Badge variant="glow" className="text-[9px] px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                        NEW
+                      </Badge>
+                    </div>
+
+                    {/* Toggle Switch */}
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isPortfolioPublic}
+                      onClick={handleTogglePortfolioPublic}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isPortfolioPublic ? 'bg-indigo-600' : 'bg-slate-700'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                          isPortfolioPublic ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-400">Make your profile public and share your journey with the world.</p>
+
+                  {isPortfolioPublic ? (
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400">Your Public Portfolio Link</span>
+                        {copiedLink && (
+                          <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" /> Copied!
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <div className="flex-1 flex items-center bg-[#0a071a]/80 rounded-xl border border-white/10 px-3 py-2 text-xs font-mono text-indigo-300 overflow-hidden">
+                          <Globe className="w-3.5 h-3.5 text-indigo-400 mr-2 shrink-0" />
+                          <span className="truncate">{portfolioUrl}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCopyPortfolioUrl}
+                            className="h-9 text-[11px] border-white/10 text-slate-300 hover:text-white"
+                          >
+                            {copiedLink ? <Check className="w-3.5 h-3.5 mr-1 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                            {copiedLink ? 'Copied' : 'Copy Link'}
+                          </Button>
+
+                          <a
+                            href={`/u/${customHandle}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button
+                              type="button"
+                              variant="glow"
+                              size="sm"
+                              className="h-9 text-[11px] px-3"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                              View Portfolio
+                            </Button>
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                        <span className="flex items-center gap-1 text-slate-400 text-[10px]">
+                          <AlertCircle className="w-3 h-3 text-slate-500" />
+                          Anyone with this link can view your public portfolio.
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-slate-400">Handle:</span>
+                          <input
+                            type="text"
+                            value={customHandle}
+                            onChange={(e) => setCustomHandle(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                            onBlur={handleSaveHandle}
+                            className="bg-black/40 border border-white/10 rounded-lg px-2 py-0.5 text-[11px] font-mono text-slate-200 focus:outline-none focus:border-indigo-500 w-28"
+                            placeholder="username"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-slate-400 italic">
+                      Public portfolio disabled. Enable toggle to share your link.
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between pt-4">
-                 
                   <Button
                     type="submit"
                     variant="premium"
@@ -288,207 +642,169 @@ const handleSaveAvatar = async () => {
             </CardContent>
           </Card>
 
-          {/* ─── NOTIFICATION PREFERENCES ────────────────────────────────── */}
+          {/* ─── SKILLS PORTFOLIO & AI EXTRACTION ───────────────────────── */}
           <Card hoverEffect={false}>
             <CardHeader>
-              <CardTitle className="text-base font-bold">Notification Controls</CardTitle>
-              <CardDescription className="text-xs">Manage how and when you receive system alerts.</CardDescription>
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <span>Skills Portfolio</span>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                  AI Automated
+                </span>
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Manage your technical skills or paste your resume text to extract skills automatically using AI.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 pt-1 text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
-              <div
-                className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
-                style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
-              >
-                <label htmlFor="notify-weekly-plan" className="space-y-1 cursor-pointer flex-1">
-                  <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>Weekly plan guides alerts</h4>
-                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    Receive automated email alerts summarizing checklist items for the week.
-                  </p>
+            <CardContent className="space-y-6 pt-1">
+              
+              {/* Removable Skills Badges */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Active Technical Skills
                 </label>
-                <input
-                  id="notify-weekly-plan"
-                  type="checkbox"
-                  checked={notifyWeeklyPlan}
-                  onChange={() => setNotifyWeeklyPlan(!notifyWeeklyPlan)}
-                  aria-label="Weekly plan guides alerts"
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                />
-              </div>
-
-              <div
-                className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
-                style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
-              >
-                <label htmlFor="notify-mentor-replied" className="space-y-1 cursor-pointer flex-1">
-                  <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>AI Mentor replies stream alerts</h4>
-                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    Push notifications alert when AI mentor finishes vector parsing calculations.
-                  </p>
-                </label>
-                <input
-                  id="notify-mentor-replied"
-                  type="checkbox"
-                  checked={notifyMentorReplied}
-                  onChange={() => setNotifyMentorReplied(!notifyMentorReplied)}
-                  aria-label="AI Mentor replies stream alerts"
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                />
-              </div>
-
-              <div
-                className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
-                style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
-              >
-                <label htmlFor="notify-recruiter-scans" className="space-y-1 cursor-pointer flex-1">
-                  <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>Recruiter search logs crawl alerts</h4>
-                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    Receive instant notifications when recruiters request access indices.
-                  </p>
-                </label>
-                <input
-                  id="notify-recruiter-scans"
-                  type="checkbox"
-                  checked={notifyRecruiterScans}
-                  onChange={() => setNotifyRecruiterScans(!notifyRecruiterScans)}
-                  aria-label="Recruiter search logs crawl alerts"
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column: Connection accounts & Operations configs */}
-        <div className="space-y-8">
-
-          {/* ─── CONNECTED ACCOUNTS ──────────────────────────────────────── */}
-          <Card hoverEffect={false}>
-            <CardHeader>
-              <CardTitle className="text-base font-bold">Connected Integrations</CardTitle>
-              <CardDescription className="text-xs">Connect credentials to sync active files.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-1">
-
-              {/* GitHub integration status */}
-              <div
-                className="p-4 rounded-xl border flex flex-col gap-4 text-xs sm:text-sm"
-                style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3.5">
-                    <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
-                      <Github className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>GitHub Crawlers</h4>
-                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                        {githubAnalytics.connected ? `Synced: @${githubAnalytics.username}` : 'Disconnected'}
-                      </p>
-                    </div>
-                  </div>
-                  {githubAnalytics.connected && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleToggleGithub}
-                      className="h-9 text-xs"
-                    >
-                      Disconnect
-                    </Button>
+                <div className="flex flex-wrap gap-1.5 border border-white/5 bg-white/2 rounded-xl p-3 min-h-12">
+                  {localSkills.length === 0 ? (
+                    <span className="text-xs text-slate-500 italic">No skills added yet. Add custom skills or paste resume below.</span>
+                  ) : (
+                    localSkills.map((skill) => (
+                      <Badge 
+                        key={skill} 
+                        variant="glow"
+                        className="pr-1.5 flex items-center space-x-1.5"
+                      >
+                        <span>{skill}</span>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveSkill(skill)} 
+                          className="hover:text-rose-400 shrink-0 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </Badge>
+                    ))
                   )}
                 </div>
-
-                {!githubAnalytics.connected && (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Enter GitHub Username..."
-                      value={gitUsername}
-                      onChange={(e) => setGitUsername(e.target.value)}
-                      disabled={gitLoading}
-                      className="flex-1 bg-[#0a071a]/50 text-xs rounded-xl border border-white/10 px-3 py-2 focus:outline-none focus:border-indigo-500/55 text-slate-200"
-                    />
-                    <Button
-                      variant="glow"
-                      size="sm"
-                      onClick={handleToggleGithub}
-                      disabled={gitLoading || !gitUsername.trim()}
-                      className="h-9 text-xs px-4"
-                    >
-                      {gitLoading ? 'Connecting...' : 'Connect'}
-                    </Button>
-                  </div>
-                )}
               </div>
 
-              {/* LinkedIn integration status */}
-              <div
-                className="p-4 rounded-xl border flex items-center justify-between text-xs sm:text-sm"
-                style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
-              >
-                <div className="flex items-center space-x-3.5">
-                  <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
-                    <Linkedin className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>LinkedIn Endorsements</h4>
-                    <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Synced & parsed</p>
-                  </div>
-                </div>
-                <Badge variant="glow">Active</Badge>
+              {/* Manual entry row */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  placeholder="Enter custom skill manually..."
+                  value={newSkill}
+                  onChange={(e) => setNewSkill(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddSkill();
+                    }
+                  }}
+                  className="flex-1 bg-[#0a071a]/50 text-slate-100 placeholder-slate-500 text-xs rounded-xl border border-white/10 px-4 py-2.5 focus:outline-none focus:border-indigo-500/80"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleAddSkill}
+                  className="h-10 px-3 rounded-xl flex items-center justify-center border-white/10 text-slate-300 hover:text-white"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add
+                </Button>
               </div>
 
-            </CardContent>
-          </Card>
-
-          {/* ─── DANGER ZONES: RESET & DELETE ACCOUNTS ───────────────────── */}
-          <Card hoverEffect={false} className="border-rose-500/20">
-            <CardHeader>
-              <CardTitle className="text-base font-bold text-rose-300">Danger Operations</CardTitle>
-              <CardDescription className="text-xs">Destructive changes that erase technical indices.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-1">
-
-              {/* Reset Onboarding pathway */}
-              <div className="p-3.5 bg-rose-500/5 rounded-xl border border-rose-500/10 flex flex-col space-y-3.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <div>
-                  <h4 className="font-bold flex items-center" style={{ color: 'var(--text-primary)' }}>
-                    <RefreshCw className="w-4 h-4 mr-1 text-rose-400" />
-                    Reset Onboarding Wizard
-                  </h4>
-                  <p className="text-[10px] leading-relaxed mt-1" style={{ color: 'var(--text-muted)' }}>
-                    Erase your active profile metrics, resume attachments, and GitHub mappings to rerun the cinematic AI blueprint engine from start.
-                  </p>
+              {/* AI Resume Skill Extractor Container */}
+              <div className="rounded-xl border border-indigo-500/20 bg-indigo-950/20 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
+                    <span>Quick Extract from Resume</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400">AI ATS Parser</span>
                 </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Paste the text of your resume below. Pilot AI will automatically extract technical skills (languages, frameworks, tools) and merge them into your portfolio.
+                </p>
+
+                <textarea
+                  rows={4}
+                  placeholder="Paste resume text here..."
+                  value={resumeText}
+                  onChange={(e) => setResumeText(e.target.value)}
+                  className="w-full bg-[#070517] text-xs text-white placeholder-slate-500 p-3 rounded-xl border border-indigo-500/20 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition resize-none"
+                />
 
                 <div className="flex items-center justify-between">
-                 
+                  <div>
+                    {extractError && <p className="text-xs text-rose-400 font-medium">{extractError}</p>}
+                    {extractSuccess && <p className="text-xs text-emerald-400 font-medium">{extractSuccess}</p>}
+                  </div>
                   <Button
-                    variant="outline"
+                    type="button"
+                    onClick={handleExtractSkillsInSettings}
+                    disabled={isExtracting}
+                    variant="premium"
                     size="sm"
-                    onClick={handleResetOnboarding}
-                    className="h-9 text-[10px] border-rose-500/30 hover:bg-rose-500/10 hover:text-white"
+                    className="h-9 px-4 text-xs font-semibold"
                   >
-                    Reset Onboarding State
+                    {isExtracting ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                        Extracting...
+                      </>
+                    ) : (
+                      'Extract & Merge Skills'
+                    )}
                   </Button>
                 </div>
               </div>
 
-              {/* Delete Account */}
-              <Button
-                variant="outline"
-                className="w-full h-11 border-rose-500/20 hover:bg-rose-500/10 text-rose-400 hover:text-white text-xs font-semibold"
-                leftIcon={<Trash2 className="w-4 h-4 shrink-0" />}
-              >
-                Delete Account & Cockpit
-              </Button>
+              {/* Save Trigger */}
+              <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                {skillsSaveSuccess && (
+                  <span className="text-xs text-emerald-400 font-semibold flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-1.5 animate-bounce" />
+                    Skills portfolio saved successfully!
+                  </span>
+                )}
+                <Button
+                  type="button"
+                  onClick={handleSaveSkills}
+                  disabled={skillsSaveLoading}
+                  variant="premium"
+                  className="h-11 px-6 ml-auto text-xs font-semibold"
+                >
+                  {skillsSaveLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Skills Changes'
+                  )}
+                </Button>
+              </div>
 
             </CardContent>
           </Card>
 
-        </div>
-
-      </div>
-    </div>
-  );
-}
+          {/* ─── PROFESSIONAL LINKS ──────────────────────────────────────── */}
+          <Card hoverEffect={false}>
+            <CardHeader>
+              <CardTitle>Professional Links</CardTitle>
+              <CardDescription>Manage your GitHub, LinkedIn, and Resume URLs.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                label="GitHub URL"
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+              />
+              <Input
+                label="LinkedIn URL"
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+              />
+              <Input
+                label="Resume URL"
+                value={resumeUrl}
+                onChange={(e) => setResumeUrl(e.target.value)}

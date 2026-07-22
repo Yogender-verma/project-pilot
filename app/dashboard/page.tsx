@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/Card";
 import { Progress } from "@/components/ui/Progress";
+import Tooltip from "@/components/ui/Tooltip";
 import { useAppStore } from "@/store/useAppStore";
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
@@ -28,6 +29,7 @@ import {
   Cpu,
   FileText,
   GitMerge,
+  Info,
   Sparkles,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -123,12 +125,8 @@ export default function MainDashboardPage() {
         </div>
 
         <Link href="/dashboard/projects" className="shrink-0 w-full md:w-auto">
-          <Button
-            variant="premium"
-            className="w-full h-12"
-            rightIcon={<ArrowUpRight className="w-4.5 h-4.5" />}
-          >
-            View Recommendations
+          <Button variant="glow" className="w-full h-12 px-5" rightIcon={<ArrowUpRight className="w-4.5 h-4.5" />}>
+            View Blueprints
           </Button>
         </Link>
       </motion.div>
@@ -143,9 +141,18 @@ export default function MainDashboardPage() {
         >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <CardTitle className="text-base font-bold">
-                Career Skill Match Blueprint
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base font-bold">
+                  Career Skill Match Blueprint
+                </CardTitle>
+
+                <Tooltip content="Shows how your skills compare across different full-stack areas like frontend, backend, DevOps, and databases.">
+                  <Info
+                    className="h-4 w-4 cursor-help text-slate-400 hover:text-indigo-400 transition-colors"
+                    aria-label="Career Skill Match information"
+                  />
+                </Tooltip>
+              </div>
               <CardDescription className="text-xs">
                 Granular analysis across standard full-stack categories.
               </CardDescription>
@@ -174,9 +181,15 @@ export default function MainDashboardPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2 text-indigo-300">
                   <FileText className="w-4 h-4" />
-                  <span className="text-xs font-semibold uppercase tracking-wider">
-                    Resume Score
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider">
+                      Resume Score
+                    </span>
+
+                    <Tooltip content="ATS score showing how well your resume matches recruiter and applicant tracking system expectations.">
+                      <Info className="h-3.5 w-3.5 cursor-help text-slate-400 hover:text-indigo-400" />
+                    </Tooltip>
+                  </div>
                 </div>
                 <Badge variant="success">Good match</Badge>
               </div>
@@ -217,9 +230,15 @@ export default function MainDashboardPage() {
                     className="w-4 h-4 animate-spin"
                     style={{ animationDuration: "6s" }}
                   />
-                  <span className="text-xs font-semibold uppercase tracking-wider">
-                    GitHub Scanner
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider">
+                      GitHub Scanner
+                    </span>
+
+                    <Tooltip content="Calculated from repository activity, commit frequency, and contribution consistency.">
+                      <Info className="h-3.5 w-3.5 cursor-help text-slate-400 hover:text-indigo-400" />
+                    </Tooltip>
+                  </div>
                 </div>
                 <Badge variant="glow">Synced</Badge>
               </div>
@@ -350,9 +369,15 @@ export default function MainDashboardPage() {
                 Detected Skill Gaps
               </span>
             </div>
-            <CardTitle className="text-base font-bold">
-              High Priority Gaps
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-base font-bold">
+                High Priority Gaps
+              </CardTitle>
+
+              <Tooltip content="These are the most impactful skills missing from your profile based on your selected career goal.">
+                <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-indigo-400" />
+              </Tooltip>
+            </div>
             <CardDescription className="text-xs">
               Acquiring these will yield the largest salary impacts.
             </CardDescription>
@@ -408,9 +433,15 @@ export default function MainDashboardPage() {
                 Active contribution index
               </span>
             </div>
-            <CardTitle className="text-base font-bold">
-              GitHub Weekly Commit Rates
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-base font-bold">
+                GitHub Weekly Commit Rates
+              </CardTitle>
+
+              <Tooltip content="Displays your recent weekly commit activity to help track coding consistency.">
+                <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-indigo-400" />
+              </Tooltip>
+            </div>
             <CardDescription className="text-xs">
               Commit consistency scores measured from active repository pushes.
             </CardDescription>
@@ -444,9 +475,15 @@ export default function MainDashboardPage() {
                 Weekly Pilot Plan
               </span>
             </div>
-            <CardTitle className="text-base font-bold">
-              Week 1 Ingestion Plan
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-base font-bold">
+                Week 1 Ingestion Plan
+              </CardTitle>
+
+              <Tooltip content="A personalized weekly roadmap generated from your current skills and career goals.">
+                <Info className="h-4 w-4 cursor-help text-slate-400 hover:text-indigo-400" />
+              </Tooltip>
+            </div>
             <CardDescription className="text-xs">
               Based on {user?.skills.slice(0, 3).join(", ")} skills foundation.
             </CardDescription>

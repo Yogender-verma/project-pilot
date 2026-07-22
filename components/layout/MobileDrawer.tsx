@@ -2,9 +2,11 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useClerk, useUser } from '@clerk/nextjs';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
+import FocusTrap from 'focus-trap-react';
 import {
   Compass,
   LayoutDashboard,
@@ -149,18 +151,21 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
           aria-modal="true"
           aria-label="Mobile Navigation Drawer"
         >
-          {/* Backdrop Blur Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md cursor-pointer"
-          />
+          <FocusTrap focusTrapOptions={{ clickOutsideDeactivates: true, escapeDeactivates: false }}>
+            <div className="w-full h-full flex">
+              {/* Backdrop Blur Overlay */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={onClose}
+                className="fixed inset-0 bg-black/80 backdrop-blur-md cursor-pointer"
+              />
 
           {/* Locked Solid 100% Height Drawer Panel */}
           <motion.aside
+            id="mobile-drawer"
             ref={drawerRef}
             variants={drawerVariants}
             initial="hidden"
@@ -195,6 +200,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
                 onClick={onClose}
                 aria-label="Close navigation drawer"
                 title="Close navigation drawer"
+                aria-controls="mobile-drawer"
                 className="p-2 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 style={{
                   borderColor: 'var(--border-subtle)',
@@ -277,8 +283,14 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
               >
                 <div className="w-9.5 h-9.5 rounded-full overflow-hidden border border-indigo-500/30 flex items-center justify-center bg-indigo-500/10 shrink-0">
                   {displayUser.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={displayUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    <Image
+                      src={displayUser.avatarUrl}
+                      alt={`${displayUser.name}'s profile avatar`}
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-cover"
+                      unoptimized={displayUser.avatarUrl.startsWith('data:') || displayUser.avatarUrl.startsWith('blob:')}
+                    />
                   ) : (
                     <UserIcon className="w-4.5 h-4.5 text-indigo-400" />
                   )}
@@ -305,6 +317,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
               </button>
             </motion.div>
           </motion.aside>
+            </div>
+          </FocusTrap>
         </div>
       )}
     </AnimatePresence>
