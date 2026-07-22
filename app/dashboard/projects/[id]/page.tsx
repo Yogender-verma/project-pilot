@@ -28,6 +28,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import { Button } from '@/components/ui/Button';
+import { ProjectExportMenu } from '@/components/projects/ProjectExportMenu';
 import { ActivityTimeline } from '@/components/projects/ActivityTimeline';
 
 export default function ProjectDetailsPage() {
@@ -41,15 +42,32 @@ export default function ProjectDetailsPage() {
   
   // Find project based on slug params or active Zustand ID
   const projectId = params.id as string;
-  const project = projects.find(p => p.id === projectId) || projects[0];
+  const project = projects.find(p => p.id === projectId);
   
-  // Connect related roadmap
-  const activeRoadmap = roadmaps[project.id];
+  // Connect related roadmap only when the requested project exists.
+  const activeRoadmap = project ? roadmaps[project.id] : undefined;
 
   // Set this project as active on mount just in case
   useEffect(() => {
-    selectProject(project.id);
-  }, [project.id, selectProject]);
+    if (project) selectProject(project.id);
+  }, [project, selectProject]);
+
+  if (!project) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center text-center">
+        <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <FileText className="h-7 w-7 text-slate-400" />
+        </div>
+        <h2 className="text-xl font-bold text-white">Project unavailable</h2>
+        <p className="mt-2 text-sm text-slate-400">
+          This project does not exist or is no longer available in your recommendations.
+        </p>
+        <Button className="mt-6" onClick={() => router.push('/dashboard/projects')}>
+          Return to projects
+        </Button>
+      </div>
+    );
+  }
 
   // Calculate checklists completion rate
   const completedSteps = activeRoadmap ? activeRoadmap.steps.filter(s => s.completed).length : 0;
@@ -114,7 +132,8 @@ export default function ProjectDetailsPage() {
         </div>
 
         {/* Action Widgets */}
-        <div className="flex flex-row md:flex-col items-center gap-3 w-full md:w-auto shrink-0 border-t md:border-t-0 border-white/5 pt-4 md:pt-0">
+        <div className="flex flex-col items-stretch gap-3 w-full md:w-auto shrink-0 border-t md:border-t-0 border-white/5 pt-4 md:pt-0">
+          <ProjectExportMenu project={project} roadmap={activeRoadmap} />
           <Link href="/dashboard/mentor" className="w-full">
             <Button variant="glow" className="w-full text-xs h-11" leftIcon={<Sparkles className="w-4 h-4 animate-bounce" />}>
               Discuss with AI Mentor

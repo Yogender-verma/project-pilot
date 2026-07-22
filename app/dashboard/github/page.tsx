@@ -7,9 +7,16 @@ import {
   Star, GitFork, Code, Target, Zap, BrainCircuit
 } from 'lucide-react';
 import { Github } from '@/components/ui/BrandIcons';
-import { 
-  ResponsiveContainer, PieChart, Pie, Cell, Tooltip
-} from 'recharts';
+import dynamic from 'next/dynamic';
+import { PieChartSkeleton } from '@/components/charts/ChartSkeleton';
+
+const LanguagePieChart = dynamic(
+  () => import('@/components/charts/LanguagePieChart'),
+  {
+    ssr: false,
+    loading: () => <PieChartSkeleton />,
+  }
+);
 import { useAppStore } from '@/store/useAppStore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -24,19 +31,7 @@ export default function GitHubAnalyticsPage() {
     setMounted(true);
   }, []);
 
-  const RADIAN = Math.PI / 180;
-  
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-    return (
-      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={10} fontWeight="bold">
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-    );
-  };
 
   return (
     <div className="space-y-8 pb-12">
@@ -90,27 +85,7 @@ export default function GitHubAnalyticsPage() {
             <CardTitle className="text-base font-bold">Language Breakdown</CardTitle>
           </CardHeader>
           <CardContent className="h-[140px] flex items-center justify-center pt-2">
-            {mounted && (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={githubAnalytics.languages}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={renderCustomizedLabel}
-                    outerRadius={55}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {githubAnalytics.languages.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#060417', borderColor: 'rgba(255,255,255,0.06)', borderRadius: 12 }} itemStyle={{ fontSize: 11, fontWeight: 'bold' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+            <LanguagePieChart data={githubAnalytics.languages} />
           </CardContent>
           <CardFooter className="pt-1 flex flex-wrap gap-1 text-[9px] font-semibold justify-center">
             {githubAnalytics.languages.map(lang => (

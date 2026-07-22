@@ -430,3 +430,39 @@ div:has(> .cl-devMode) {
   background-color: var(--surface-secondary) !important;
 }
 
+/* ── Remove Recharts SVG focus borders / outlines ──── */
+.recharts-wrapper,
+.recharts-surface,
+.recharts-responsive-container,
+.recharts-layer,
+.recharts-sector,
+.recharts-pie,
+.recharts-radar,
+.recharts-bar {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.recharts-wrapper *:focus,
+.recharts-surface *:focus,
+.recharts-responsive-container *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Recharts & SVG Text Light Theme High-Contrast Rules ── */
+[data-theme="light"] .recharts-cartesian-axis-tick-value,
+[data-theme="light"] .recharts-polar-angle-axis-tick text,
+[data-theme="light"] .recharts-polar-angle-axis-tick tspan {
+  fill: #1a1740 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .recharts-polar-grid-angle line,
+[data-theme="light"] .recharts-polar-grid-concentric circle,
+[data-theme="light"] .recharts-polar-grid-concentric path {
+  stroke: rgba(99, 102, 241, 0.25) !important;
+}
+
+
+

@@ -9,19 +9,21 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type = 'text', label, error, leftIcon, rightElement, ...props }, ref) => {
+  ({ className, type = 'text', label, error, leftIcon, rightElement, id, required, ...props }, ref) => {
+    const generatedId = React.useId();
+    const inputId = id || (label ? `input-${generatedId}` : undefined);
+    const errorId = inputId ? `${inputId}-error` : undefined;
+
     return (
       <div className="w-full flex flex-col space-y-1.5">
         {label && (
-          /*
-           * Label — removed hardcoded text-slate-400.
-           * Uses var(--text-muted) so it is legible in both themes.
-           */
           <label
-            className="text-xs font-semibold tracking-wider uppercase"
+            htmlFor={inputId}
+            className="text-xs font-semibold tracking-wider uppercase flex items-center justify-between"
             style={{ color: 'var(--text-muted)' }}
           >
-            {label}
+            <span>{label}</span>
+            {required && <span className="text-rose-400 font-bold ml-1 text-xs" aria-hidden="true">*</span>}
           </label>
         )}
         <div className="relative">
@@ -29,26 +31,21 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <div
               className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none"
               style={{ color: 'var(--text-muted)' }}
+              aria-hidden="true"
             >
               {leftIcon}
             </div>
           )}
-          {/*
-           * Input field — all hardcoded hex & dark-only Tailwind classes replaced
-           * with CSS custom property inline styles so the field is fully visible
-           * in both dark and light themes.
-           *
-           * bg-[#0a071a]/50   → var(--input-bg)       (solid purple-tinted in light)
-           * text-slate-100    → var(--text-primary)    (deep navy in light)
-           * placeholder-slate-500 → var(--text-placeholder)
-           * border-white/10   → var(--input-border)
-           * hover:border-white/20 → handled via :focus style below
-           */}
           <input
+            id={inputId}
             type={type}
             ref={ref}
+            required={required}
+            aria-required={required ? 'true' : undefined}
+            aria-invalid={error ? 'true' : undefined}
+            aria-describedby={error ? errorId : undefined}
             className={cn(
-              'w-full text-sm rounded-xl px-4 py-3 transition-all duration-200 focus:outline-none focus:ring-1',
+              'w-full text-sm rounded-xl px-4 py-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
               leftIcon && 'pl-11',
               rightElement && 'pr-11',
               className
@@ -59,7 +56,6 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               border: error
                 ? '1px solid rgba(244, 63, 94, 0.5)'
                 : '1px solid var(--input-border)',
-              /* Placeholder is set via CSS class below */
             }}
             {...props}
           />
@@ -73,7 +69,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {error && (
-          <span className="text-xs text-rose-400 font-medium mt-1">
+          <span
+            id={errorId}
+            role="alert"
+            aria-live="polite"
+            className="text-xs text-rose-400 font-medium mt-1 flex items-center gap-1"
+          >
             {error}
           </span>
         )}

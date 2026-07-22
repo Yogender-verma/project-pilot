@@ -10,6 +10,7 @@ model User {
   id                  String         @id @default(cuid())
   clerkId             String         @unique
   fullName            String?
+  username            String?        @unique
   email               String         @unique
   imageUrl            String?
   dreamRole           String?
@@ -19,6 +20,7 @@ model User {
   resumeUrl           String?
   dailyStudyTime      Int?
   onboardingCompleted Boolean        @default(false)
+  portfolioPublic     Boolean        @default(false)
   projects            Project[]
   notifications       Notification[]
   activities          Activity[]
@@ -37,19 +39,28 @@ model Project {
   userId      String
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   activities  Activity[]
+  dueAt      DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
 
 model Notification {
   id        String   @id @default(cuid())
+  title     String
   message   String
   type      String
   isRead    Boolean  @default(false)
   link      String?
+  projectId String?
+  dedupeKey String   @unique
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, isRead, createdAt])
+  @@index([userId, type])
+  @@index([projectId])
 }
 
 model Activity {
@@ -61,8 +72,4 @@ model Activity {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
-
-
-  @@index([userId, createdAt])
-  @@index([projectId, createdAt])
 }

@@ -9,7 +9,6 @@ import {
   Clock, 
   Cpu, 
   Sparkles, 
-  ArrowUpRight, 
   ChevronRight, 
   Terminal as TermIcon
 } from 'lucide-react';
@@ -18,6 +17,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function VisualRoadmapsPage() {
   const { projects, selectedProjectId, roadmaps, toggleStepCompletion } = useAppStore();
@@ -29,21 +29,16 @@ export default function VisualRoadmapsPage() {
   // Render empty state if no active roadmap selected
   if (!activeProject || !activeRoadmap) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-6 space-y-6">
-        <div className="w-16 h-16 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 animate-pulse">
-          <Map className="w-8 h-8" />
-        </div>
-        <div className="max-w-md space-y-2">
-          <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>No active roadmap target selected</h2>
-          <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Select a project recommendation from the catalog to configure dynamic day-by-day blueprints and track recruiter handshake completion scores.
-          </p>
-        </div>
-        <Link href="/dashboard/projects">
-          <Button variant="premium" rightIcon={<ArrowUpRight className="w-4 h-4" />}>
-            Explore Project Recommendations
-          </Button>
-        </Link>
+      <div className="min-h-[70vh] py-4 sm:py-8">
+        <EmptyState
+          title="No Roadmaps Available"
+          description="Start building your learning journey by choosing a project and creating your first personalized roadmap."
+          icon={<Map className="h-10 w-10 sm:h-12 sm:w-12" />}
+          ctaLabel="Create Roadmap"
+          ctaHref="/dashboard/projects"
+          secondaryLabel="Ask AI Mentor"
+          secondaryHref="/dashboard/mentor"
+        />
       </div>
     );
   }

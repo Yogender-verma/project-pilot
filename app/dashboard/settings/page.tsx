@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
   Settings,
@@ -18,7 +19,11 @@ import {
   Camera,
   Loader2,
   Plus,
-  X
+  X,
+  Globe,
+  Copy,
+  ExternalLink,
+  Check
 } from 'lucide-react';
 import { Github, Linkedin } from '@/components/ui/BrandIcons';
 import { useAppStore } from '@/store/useAppStore';
@@ -31,11 +36,9 @@ import type { Theme } from '@/lib/ThemeProvider';
 import { updateUserSkillsInDb } from '@/app/actions/user';
 import { extractSkillsFromResume } from '@/app/actions/extractSkills';
 
-// UploadThing Integrations
-import { updateProfileAvatar } from '@/app/actions/user';
-
+// Client API Handlers
 export default function SettingsPage() {
-  const { user, onboardingData, updateProfile, updateAvatar, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub, updateUserSkills } = useAppStore();
+  const { user, onboardingData, updateProfile, updateAvatar, updatePortfolioVisibility, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub, updateUserSkills } = useAppStore();
 
   // Access the global theme state & setTheme so the user can pick directly
   const { theme, setTheme } = useTheme();
@@ -44,6 +47,77 @@ export default function SettingsPage() {
   const [profileName, setProfileName] = useState(user?.name || 'yogender verma');
   const [profileEmail, setProfileEmail] = useState(user?.email || 'yogendarverma0268@gmail.com');
   const [profileGoal, setProfileGoal] = useState(user?.careerGoal || 'AI Engineer');
+  const [githubUrl, setGithubUrl] = useState(user?.githubUrl || '');
+  const [linkedinUrl, setLinkedinUrl] = useState(user?.linkedinUrl || '');
+  const [resumeUrl, setResumeUrl] = useState(user?.resumeUrl || '');
+
+  const [linksLoading, setLinksLoading] = useState(false);
+  const [linksSuccess, setLinksSuccess] = useState(false);
+  const [linksError, setLinksError] = useState('');
+  useEffect(() => {
+
+    async function loadLinks(){
+
+        try{
+
+            const data = await getProfessionalLinks();
+
+            if(!data) return;
+
+            setGithubUrl(data.githubUrl || "");
+            setLinkedinUrl(data.linkedinUrl || "");
+            setResumeUrl(data.resumeUrl || "");
+
+        }catch(err){
+            console.error(err);
+        }
+
+    }
+
+    loadLinks();
+
+},[]);
+
+  // Portfolio Visibility States
+  const [isPortfolioPublic, setIsPortfolioPublic] = useState(user?.portfolioPublic ?? false);
+  const [customHandle, setCustomHandle] = useState(user?.username || user?.name?.toLowerCase().replace(/\s+/g, '-') || 'yogender-verma');
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const portfolioUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/u/${customHandle}`
+    : `https://projectpilot.dev/u/${customHandle}`;
+
+  const handleTogglePortfolioPublic = async () => {
+    const nextState = !isPortfolioPublic;
+    setIsPortfolioPublic(nextState);
+    updatePortfolioVisibility(nextState, customHandle);
+    try {
+      await fetch('/api/settings/portfolio', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ portfolioPublic: nextState, username: customHandle }),
+      });
+    } catch (e) {}
+  };
+
+  const handleSaveHandle = async () => {
+    updatePortfolioVisibility(isPortfolioPublic, customHandle);
+    try {
+      await fetch('/api/settings/portfolio', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ portfolioPublic: isPortfolioPublic, username: customHandle }),
+      });
+    } catch (e) {}
+  };
+
+  const handleCopyPortfolioUrl = () => {
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(portfolioUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
 
   // Skills management states
   const [localSkills, setLocalSkills] = useState<string[]>(user?.skills || []);
@@ -130,15 +204,7 @@ export default function SettingsPage() {
 
   const handleSaveAvatar = async () => {
     if (!previewUrl) return;
-    
-    // Save to global state instantly as base64
     updateAvatar(previewUrl);
-    
-    try {
-      // Attempt to persist to DB (optional fallback)
-      await updateProfileAvatar(previewUrl);
-    } catch(e) {}
-    
     setAvatarSuccess("Avatar updated locally successfully!");
     setAvatarFile(null);
   };
@@ -179,6 +245,63 @@ export default function SettingsPage() {
     updateProfile(profileName, profileEmail, profileGoal);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  const validateUrl = (url: string) => {
+    if (!url) return true;
+
+    try {
+        new URL(url);
+        return true;
+    } catch {
+        return false;
+    }
+  };
+
+  const handleSaveLinks = async () => {
+
+    if (
+        !validateUrl(githubUrl) ||
+        !validateUrl(linkedinUrl) ||
+        !validateUrl(resumeUrl)
+    ) {
+        setLinksError("Please enter valid URLs.");
+        return;
+    }
+
+    setLinksError("");
+    setLinksLoading(true);
+
+    try {
+
+        await updateProfessionalLinks({
+            githubUrl,
+            linkedinUrl,
+            resumeUrl,
+        });
+
+        updateLinksStore(
+            githubUrl,
+            linkedinUrl,
+            resumeUrl
+        );
+
+        setLinksSuccess(true);
+
+        setTimeout(() => {
+            setLinksSuccess(false);
+        },2000);
+
+    } catch {
+
+        setLinksError("Failed to save links.");
+
+    } finally {
+
+        setLinksLoading(false);
+
+    }
+
   };
 
   // Reset Onboarding pathway
@@ -253,7 +376,14 @@ export default function SettingsPage() {
               <div className="p-4 bg-white/5 rounded-xl border border-white/5 flex flex-col sm:flex-row items-center gap-6 mb-6 text-xs sm:text-sm">
                 <div className="relative w-20 h-20 rounded-full border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden shrink-0 group">
                   {previewUrl ? (
-                    <img src={previewUrl} alt="Avatar Preview" className="w-full h-full object-cover transition duration-200 group-hover:opacity-75" />
+                    <Image
+                      src={previewUrl}
+                      alt="Profile Avatar Preview"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover transition duration-200 group-hover:opacity-75"
+                      unoptimized={previewUrl.startsWith('data:') || previewUrl.startsWith('blob:')}
+                    />
                   ) : (
                     <UserIcon className="w-8 h-8 text-slate-500" />
                   )}
@@ -330,38 +460,150 @@ export default function SettingsPage() {
               
               <form onSubmit={handleSaveProfile} className="space-y-4 pt-1">
                 <Input
+                  id="settings-name"
                   label="Display Name"
                   value={profileName}
                   onChange={(e) => setProfileName(e.target.value)}
-                  leftIcon={<UserIcon className="w-4.5 h-4.5" />}
+                  leftIcon={<UserIcon className="w-4.5 h-4.5" aria-hidden="true" />}
+                  required
                 />
 
                 <Input
+                  id="settings-email"
                   label="Email Address"
                   type="email"
                   value={profileEmail}
                   onChange={(e) => setProfileEmail(e.target.value)}
-                  leftIcon={<UserIcon className="w-4.5 h-4.5" />}
+                  leftIcon={<UserIcon className="w-4.5 h-4.5" aria-hidden="true" />}
+                  required
                 />
 
                 <Input
+                  id="settings-goal"
                   label="Target Career Goal"
                   value={profileGoal}
                   onChange={(e) => setProfileGoal(e.target.value)}
-                  leftIcon={<UserIcon className="w-4.5 h-4.5" />}
+                  leftIcon={<UserIcon className="w-4.5 h-4.5" aria-hidden="true" />}
                 />
+
+                {/* ─── PUBLIC PORTFOLIO VISIBILITY SECTION ───────────────────────── */}
+                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/20 space-y-3 mt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Globe className="w-4.5 h-4.5 text-indigo-400" />
+                      <span className="font-bold text-xs sm:text-sm text-slate-200">Public Portfolio</span>
+                      <Badge variant="glow" className="text-[9px] px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                        NEW
+                      </Badge>
+                    </div>
+
+                    {/* Toggle Switch */}
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isPortfolioPublic}
+                      onClick={handleTogglePortfolioPublic}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isPortfolioPublic ? 'bg-indigo-600' : 'bg-slate-700'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                          isPortfolioPublic ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-400">Make your profile public and share your journey with the world.</p>
+
+                  {isPortfolioPublic ? (
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400">Your Public Portfolio Link</span>
+                        {copiedLink && (
+                          <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" /> Copied!
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <div className="flex-1 flex items-center bg-[#0a071a]/80 rounded-xl border border-white/10 px-3 py-2 text-xs font-mono text-indigo-300 overflow-hidden">
+                          <Globe className="w-3.5 h-3.5 text-indigo-400 mr-2 shrink-0" />
+                          <span className="truncate">{portfolioUrl}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCopyPortfolioUrl}
+                            className="h-9 text-[11px] border-white/10 text-slate-300 hover:text-white"
+                          >
+                            {copiedLink ? <Check className="w-3.5 h-3.5 mr-1 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                            {copiedLink ? 'Copied' : 'Copy Link'}
+                          </Button>
+
+                          <a
+                            href={`/u/${customHandle}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button
+                              type="button"
+                              variant="glow"
+                              size="sm"
+                              className="h-9 text-[11px] px-3"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                              View Portfolio
+                            </Button>
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                        <span className="flex items-center gap-1 text-slate-400 text-[10px]">
+                          <AlertCircle className="w-3 h-3 text-slate-500" />
+                          Anyone with this link can view your public portfolio.
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-slate-400">Handle:</span>
+                          <input
+                            type="text"
+                            value={customHandle}
+                            onChange={(e) => setCustomHandle(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                            onBlur={handleSaveHandle}
+                            className="bg-black/40 border border-white/10 rounded-lg px-2 py-0.5 text-[11px] font-mono text-slate-200 focus:outline-none focus:border-indigo-500 w-28"
+                            placeholder="username"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-slate-400 italic">
+                      Public portfolio disabled. Enable toggle to share your link.
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex items-center justify-between pt-4">
                   {saveSuccess && (
-                    <span className="text-xs text-emerald-400 font-semibold flex items-center">
-                      <CheckCircle className="w-4 h-4 mr-1.5 animate-bounce" />
+                    <span
+                      role="status"
+                      aria-live="polite"
+                      className="text-xs text-emerald-400 font-semibold flex items-center"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-1.5 animate-bounce" aria-hidden="true" />
                       Changes saved successfully
                     </span>
                   )}
                   <Button
                     type="submit"
                     variant="premium"
-                    className="h-11 px-6 ml-auto text-xs font-semibold"
+                    className="h-11 px-6 ml-auto text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                   >
                     Save Profile Changes
                   </Button>
@@ -515,6 +757,49 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
+          {/* ─── PROFESSIONAL LINKS ──────────────────────────────────────── */}
+          <Card hoverEffect={false}>
+            <CardHeader>
+              <CardTitle>Professional Links</CardTitle>
+              <CardDescription>Manage your GitHub, LinkedIn, and Resume URLs.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                label="GitHub URL"
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+              />
+              <Input
+                label="LinkedIn URL"
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+              />
+              <Input
+                label="Resume URL"
+                value={resumeUrl}
+                onChange={(e) => setResumeUrl(e.target.value)}
+              />
+              {linksError && (
+                <p className="text-xs text-red-500">
+                  {linksError}
+                </p>
+              )}
+              {linksSuccess && (
+                <p className="text-xs text-green-500">
+                  Links updated successfully.
+                </p>
+              )}
+              <Button
+                onClick={handleSaveLinks}
+                disabled={linksLoading}
+                variant="premium"
+                className="mt-2"
+              >
+                {linksLoading ? "Saving..." : "Save Professional Links"}
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* ─── NOTIFICATION PREFERENCES ────────────────────────────────── */}
           <Card hoverEffect={false}>
             <CardHeader>
@@ -526,17 +811,19 @@ export default function SettingsPage() {
                 className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
                 style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
               >
-                <div className="space-y-1">
+                <label htmlFor="notify-weekly-plan" className="space-y-1 cursor-pointer flex-1">
                   <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>Weekly plan guides alerts</h4>
                   <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                     Receive automated email alerts summarizing checklist items for the week.
                   </p>
-                </div>
+                </label>
                 <input
+                  id="notify-weekly-plan"
                   type="checkbox"
                   checked={notifyWeeklyPlan}
                   onChange={() => setNotifyWeeklyPlan(!notifyWeeklyPlan)}
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer"
+                  aria-label="Weekly plan guides alerts"
+                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 />
               </div>
 
@@ -544,17 +831,19 @@ export default function SettingsPage() {
                 className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
                 style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
               >
-                <div className="space-y-1">
+                <label htmlFor="notify-mentor-replied" className="space-y-1 cursor-pointer flex-1">
                   <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>AI Mentor replies stream alerts</h4>
                   <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                     Push notifications alert when AI mentor finishes vector parsing calculations.
                   </p>
-                </div>
+                </label>
                 <input
+                  id="notify-mentor-replied"
                   type="checkbox"
                   checked={notifyMentorReplied}
                   onChange={() => setNotifyMentorReplied(!notifyMentorReplied)}
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer"
+                  aria-label="AI Mentor replies stream alerts"
+                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 />
               </div>
 
@@ -562,17 +851,19 @@ export default function SettingsPage() {
                 className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
                 style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
               >
-                <div className="space-y-1">
+                <label htmlFor="notify-recruiter-scans" className="space-y-1 cursor-pointer flex-1">
                   <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>Recruiter search logs crawl alerts</h4>
                   <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                     Receive instant notifications when recruiters request access indices.
                   </p>
-                </div>
+                </label>
                 <input
+                  id="notify-recruiter-scans"
                   type="checkbox"
                   checked={notifyRecruiterScans}
                   onChange={() => setNotifyRecruiterScans(!notifyRecruiterScans)}
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer"
+                  aria-label="Recruiter search logs crawl alerts"
+                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 />
               </div>
             </CardContent>

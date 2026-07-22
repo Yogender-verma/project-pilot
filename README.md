@@ -115,6 +115,19 @@ We welcome contributions to ProjectPilot AI! To contribute:
 
 Please ensure your code passes linting (`npm run lint`) and follows the project's coding standards before submitting a PR.
 
+## 🤝 Contributors
+
+Thanks to everyone who has contributed to ProjectPilot AI. Your contributions help make this project better for the community!
+
+<a href="https://github.com/Yogender-verma/project-pilot/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Yogender-verma/project-pilot"
+  alt="Project contributors"
+   />
+</a>
+
+
+
+
 ## Author
 **Yogender Verma**
 

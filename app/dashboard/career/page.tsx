@@ -17,14 +17,16 @@ import {
   Activity,
   AlertTriangle
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  RadarChart, 
-  PolarGrid, 
-  PolarAngleAxis, 
-  PolarRadiusAxis, 
-  Radar 
-} from 'recharts';
+import dynamic from 'next/dynamic';
+import { RadarChartSkeleton } from '@/components/charts/ChartSkeleton';
+
+const SkillRadarChart = dynamic(
+  () => import('@/components/charts/SkillRadarChart'),
+  {
+    ssr: false,
+    loading: () => <RadarChartSkeleton />,
+  }
+);
 import { useAppStore } from '@/store/useAppStore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -107,16 +109,7 @@ export default function CareerScorePage() {
 
             {/* Radar chart */}
             <div className="sm:col-span-2 h-[200px] flex items-center justify-center pt-2">
-              {mounted && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                    <PolarGrid stroke="rgba(255, 255, 255, 0.08)" />
-                    <PolarAngleAxis dataKey="subject" stroke="#94a3b8" fontSize={9} fontWeight={600} />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="rgba(255, 255, 255, 0.1)" tickCount={3} fontSize={8} />
-                    <Radar name="Skills" dataKey="A" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.25} />
-                  </RadarChart>
-                </ResponsiveContainer>
-              )}
+              <SkillRadarChart data={radarData} />
             </div>
 
           </CardContent>
