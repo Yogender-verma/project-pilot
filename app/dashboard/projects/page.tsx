@@ -15,10 +15,9 @@ import {
   Check,
   TrendingUp,
   BrainCircuit,
-  Loader2
+  Loader2,
+  Plus
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowUpRight, Check, Clock, FolderGit2, TrendingUp, Plus, Search } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
