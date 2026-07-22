@@ -10,31 +10,6 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   try {
     const { messages, userContext, isRoastMode } = await req.json();
-    const { userId } = auth();
-
-    const redisRestUrl = process.env.UPSTASH_REDIS_REST_URL;
-    const redisRestToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-    if (redisRestUrl && redisRestToken) {
-      const ratelimit = new Ratelimit({
-        redis: Redis.fromEnv(),
-        limiter: Ratelimit.slidingWindow(10, "1 m"),
-      });
-
-      const { success, limit, reset, remaining } = await ratelimit.limit(userId || 'anonymous');
-
-      if (!success) {
-        return new Response(JSON.stringify({ error: 'Too Many Requests' }), {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'X-RateLimit-Limit': limit.toString(),
-            'X-RateLimit-Remaining': remaining.toString(),
-            'X-RateLimit-Reset': reset.toString(),
-          },
-        });
-      }
-    }
 
     // Resilient simulated streaming fallback mode when API key is unconfigured
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
