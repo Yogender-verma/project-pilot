@@ -293,6 +293,8 @@ interface AppStore {
   // Chat State
   conversations: ChatConversation[];
   activeConversationId: string | null;
+  isRoastMode: boolean;
+  toggleRoastMode: () => void;
   sendMessage: (content: string, codeSnippet?: { language: string; code: string }, attachments?: { name: string; size: string; type: string }[]) => void;
   createNewConversation: (title?: string) => string;
   selectConversation: (id: string) => void;
@@ -662,6 +664,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Chat State
   conversations: INITIAL_CONVERSATIONS,
   activeConversationId: 'conv-1',
+  isRoastMode: false,
+  toggleRoastMode: () => set((state) => ({ isRoastMode: !state.isRoastMode })),
   sendMessage: (content, codeSnippet, attachments) => set((state) => {
     const activeId = state.activeConversationId;
     if (!activeId) return {};
@@ -719,7 +723,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: apiMessages,
-            userContext: get().user || DEFAULT_USER
+            userContext: get().user || DEFAULT_USER,
+            isRoastMode: get().isRoastMode
           })
         });
 

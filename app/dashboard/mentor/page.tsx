@@ -30,7 +30,9 @@ export default function AiMentorChatPage() {
     sendMessage, 
     createNewConversation, 
     selectConversation, 
-    deleteConversation 
+    deleteConversation,
+    isRoastMode,
+    toggleRoastMode
   } = useAppStore();
 
   const [inputMessage, setInputMessage] = useState('');
@@ -164,7 +166,25 @@ export default function AiMentorChatPage() {
               <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Context: Active Match Blueprint and Roadmap</p>
             </div>
           </div>
-          <Badge variant="glow" className="text-[10px] font-mono">ONLINE</Badge>
+          <div className="flex items-center space-x-3.5">
+            <button
+              type="button"
+              onClick={toggleRoastMode}
+              title={isRoastMode ? "Disable Roast Mode" : "Enable AI Code Roast Mode"}
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold tracking-wider transition-all transform active:scale-95 border cursor-pointer ${
+                isRoastMode
+                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.3)] animate-pulse font-extrabold'
+                  : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-300'
+              }`}
+            >
+              <span>🔥</span>
+              <span>ROAST MODE</span>
+            </button>
+
+            <Badge variant="glow" className="text-[10px] font-mono">
+              ONLINE
+            </Badge>
+          </div>
         </div>
 
         {/* Scrollable messages container */}
