@@ -22,6 +22,7 @@
     "ai": "^7.0.28",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "focus-trap-react": "^12.0.3",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
@@ -46,6 +47,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "typescript": "^5"

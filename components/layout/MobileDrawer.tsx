@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useClerk, useUser } from '@clerk/nextjs';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
+import FocusTrap from 'focus-trap-react';
 import {
   Compass,
   LayoutDashboard,
@@ -150,18 +151,21 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
           aria-modal="true"
           aria-label="Mobile Navigation Drawer"
         >
-          {/* Backdrop Blur Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md cursor-pointer"
-          />
+          <FocusTrap focusTrapOptions={{ clickOutsideDeactivates: true, escapeDeactivates: false }}>
+            <div className="w-full h-full flex">
+              {/* Backdrop Blur Overlay */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={onClose}
+                className="fixed inset-0 bg-black/80 backdrop-blur-md cursor-pointer"
+              />
 
           {/* Locked Solid 100% Height Drawer Panel */}
           <motion.aside
+            id="mobile-drawer"
             ref={drawerRef}
             variants={drawerVariants}
             initial="hidden"
@@ -196,6 +200,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
                 onClick={onClose}
                 aria-label="Close navigation drawer"
                 title="Close navigation drawer"
+                aria-controls="mobile-drawer"
                 className="p-2 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 style={{
                   borderColor: 'var(--border-subtle)',
@@ -312,6 +317,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) =
               </button>
             </motion.div>
           </motion.aside>
+            </div>
+          </FocusTrap>
         </div>
       )}
     </AnimatePresence>

@@ -13,6 +13,7 @@ import {
   Settings,
   X,
 } from 'lucide-react';
+import FocusTrap from 'focus-trap-react';
 
 type SearchableProject = {
   id: string;
@@ -265,13 +266,14 @@ export function CommandPalette({
         if (event.target === event.currentTarget) onOpenChange(false);
       }}
     >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="command-palette-title"
-        className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#090620] shadow-2xl shadow-indigo-950/50"
-      >
+      <FocusTrap focusTrapOptions={{ initialFocus: false, clickOutsideDeactivates: true, escapeDeactivates: false }}>
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="command-palette-title"
+          className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#090620] shadow-2xl shadow-indigo-950/50"
+        >
         <div className="flex items-center gap-3 border-b border-white/10 px-4 sm:px-5">
           <Search className="h-5 w-5 shrink-0 text-indigo-400" />
           <label htmlFor="global-command-search" className="sr-only">
@@ -383,7 +385,7 @@ export function CommandPalette({
           <span>Esc Close</span>
           <span className="ml-auto">Ctrl/âŒ˜ + K</span>
         </div>
-      </div>
+      </FocusTrap>
     </div>
   );
 }
