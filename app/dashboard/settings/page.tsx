@@ -21,7 +21,9 @@ import {
   Globe,
   Copy,
   ExternalLink,
-  Check
+  Check,
+  Download,
+  Upload
 } from 'lucide-react';
 import { Github, Linkedin } from '@/components/ui/BrandIcons';
 import { useAppStore } from '@/store/useAppStore';
@@ -245,6 +247,58 @@ export default function SettingsPage() {
 
   const [gitUsername, setGitUsername] = useState(githubAnalytics.username || '');
   const [gitLoading, setGitLoading] = useState(false);
+
+  // Data Management states
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/settings/export');
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `project-pilot-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+
+      const response = await fetch('/api/settings/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error('Import failed');
+      
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsImporting(false);
+      if (importFileRef.current) importFileRef.current.value = '';
+    }
+  };
 
   // Toggle Git Connection
   const handleToggleGithub = async () => {
@@ -750,6 +804,70 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <Badge variant="glow">Active</Badge>
+              </div>
+
+            </CardContent>
+          </Card>
+
+          {/* ─── DATA MANAGEMENT ───────────────────────── */}
+          <Card hoverEffect={false}>
+            <CardHeader>
+              <CardTitle className="text-base font-bold text-indigo-300">Data Management</CardTitle>
+              <CardDescription className="text-xs">Export or import your profile and projects data.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-1">
+              
+              <div className="p-3.5 bg-indigo-500/5 rounded-xl border border-indigo-500/10 flex flex-col space-y-3.5 text-xs text-slate-400">
+                <div>
+                  <h4 className="font-bold flex items-center text-slate-200">
+                    <Download className="w-4 h-4 mr-1 text-indigo-400" />
+                    Export Data
+                  </h4>
+                  <p className="text-[10px] leading-relaxed mt-1">
+                    Download a JSON file containing your profile, active projects, and roadmap milestones.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportData}
+                    disabled={isExporting}
+                    className="h-9 text-[10px] border-indigo-500/30 hover:bg-indigo-500/10 hover:text-white"
+                  >
+                    {isExporting ? 'Exporting...' : 'Download JSON Data'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-indigo-500/5 rounded-xl border border-indigo-500/10 flex flex-col space-y-3.5 text-xs text-slate-400">
+                <div>
+                  <h4 className="font-bold flex items-center text-slate-200">
+                    <Upload className="w-4 h-4 mr-1 text-indigo-400" />
+                    Import Data
+                  </h4>
+                  <p className="text-[10px] leading-relaxed mt-1">
+                    Restore your profile and projects from a previously exported JSON file.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <input
+                    type="file"
+                    accept=".json"
+                    ref={importFileRef}
+                    className="hidden"
+                    onChange={handleImportData}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => importFileRef.current?.click()}
+                    disabled={isImporting}
+                    className="h-9 text-[10px] border-indigo-500/30 hover:bg-indigo-500/10 hover:text-white"
+                  >
+                    {isImporting ? 'Importing...' : 'Upload JSON Data'}
+                  </Button>
+                </div>
               </div>
 
             </CardContent>
