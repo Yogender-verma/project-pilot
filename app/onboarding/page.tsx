@@ -19,7 +19,8 @@ import {
   Database,
   Search,
   Plus,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { Github, Linkedin } from '@/components/ui/BrandIcons';
 import { useUser } from '@clerk/nextjs';
@@ -31,6 +32,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import { UploadZone } from '@/components/ui/UploadZone';
 import { saveOnboardingData, getCurrentUserProfile } from '@/app/actions/user';
+import { extractSkillsFromResume } from '@/app/actions/extractSkills';
 
 const PREDEFINED_SKILLS = [
   'React', 'Next.js', 'TypeScript', 'JavaScript', 'HTML/CSS', 
@@ -65,6 +67,40 @@ export default function OnboardingPage() {
   const [analysisStage, setAnalysisStage] = useState(0);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [dbSaved, setDbSaved] = useState(false);
+
+  // Resume text skill extraction states
+  const [resumeText, setResumeText] = useState('');
+  const [isExtractingSkills, setIsExtractingSkills] = useState(false);
+  const [extractError, setExtractError] = useState<string | null>(null);
+  const [extractSuccess, setExtractSuccess] = useState<string | null>(null);
+
+  const handleExtractSkills = async () => {
+    if (!resumeText.trim()) {
+      setExtractError('Please paste some resume text first.');
+      return;
+    }
+    setIsExtractingSkills(true);
+    setExtractError(null);
+    setExtractSuccess(null);
+
+    try {
+      const result = await extractSkillsFromResume(resumeText);
+      if (result.success && result.skills && result.skills.length > 0) {
+        const currentSkills = new Set(onboardingData.skills);
+        result.skills.forEach((skill) => currentSkills.add(skill));
+        setOnboardingField('skills', Array.from(currentSkills));
+        setExtractSuccess(`Extracted ${result.skills.length} skills successfully!`);
+        setResumeText('');
+      } else {
+        setExtractError(result.error || 'No tech skills could be identified in the text.');
+      }
+    } catch (err) {
+      console.error(err);
+      setExtractError('Failed to extract skills. Please try again.');
+    } finally {
+      setIsExtractingSkills(false);
+    }
+  };
 
   const steps = [
     { id: 1, title: 'Personal Info', icon: User },
@@ -447,6 +483,44 @@ export default function OnboardingPage() {
                       <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl" onClick={addNewSkill}>
                         <Plus className="w-5 h-5" />
                       </Button>
+                    </div>
+
+                    {/* Resume skill extractor */}
+                    <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400">⚡ AI Skill Extractor</span>
+                        <span className="text-[10px] text-slate-400">Paste raw resume text</span>
+                      </div>
+                      <textarea
+                        rows={3}
+                        placeholder="Paste your resume text here (e.g. Experience with React, Python, Docker, Postgres...)"
+                        value={resumeText}
+                        onChange={(e) => setResumeText(e.target.value)}
+                        className="w-full bg-[#070517] text-xs text-white placeholder-slate-500 p-3 rounded-xl border border-indigo-500/20 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition resize-none"
+                      />
+                      <div className="flex items-center justify-between">
+                        <div>
+                          {extractError && <p className="text-[11px] text-rose-400 font-medium">{extractError}</p>}
+                          {extractSuccess && <p className="text-[11px] text-emerald-400 font-medium">{extractSuccess}</p>}
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={handleExtractSkills}
+                          disabled={isExtractingSkills}
+                          variant="premium"
+                          size="sm"
+                          className="h-9 px-3 text-[11px]"
+                        >
+                          {isExtractingSkills ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                              Extracting...
+                            </>
+                          ) : (
+                            'Extract Skills'
+                          )}
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Filtered suggestions list */}

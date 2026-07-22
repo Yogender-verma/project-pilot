@@ -154,3 +154,43 @@ export async function updateProfileAvatar(imageUrl: string) {
     throw error;
   }
 }
+
+/**
+ * Persists the user's updated skills array to the PostgreSQL database.
+ */
+export async function updateUserSkillsInDb(skills: string[]) {
+  let userId: string | null = null;
+
+  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    const session = await auth();
+    userId = session.userId;
+  } else if (process.env.NODE_ENV === "development") {
+    userId = "mock-developer-id";
+  }
+
+  if (!userId) {
+    throw new Error("Unauthenticated user attempt to update skills.");
+  }
+
+  try {
+    return await prisma.user.update({
+      where: {
+        clerkId: userId,
+      },
+      data: {
+        skills,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to update user skills in database:", error);
+
+    if (process.env.NODE_ENV === "development") {
+      return {
+        clerkId: userId,
+        skills,
+      };
+    }
+
+    throw error;
+  }
+}
