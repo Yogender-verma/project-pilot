@@ -1,6 +1,6 @@
 import { StateCreator } from "zustand";
 import type { AppStore } from "../useAppStore";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import {
   ChatConversation,
   ChatMessage,
@@ -10,6 +10,14 @@ import {
 export interface ChatSlice {
   conversations: ChatConversation[];
   activeConversationId: string | null;
+
+  isRoastMode: boolean;
+  toggleRoastMode: () => void;
+  setRoastMode: (isRoastMode: boolean) => void;
+
+  isReadingMode: boolean;
+  activeReadingMessageId: string | null;
+  setReadingMode: (isReadingMode: boolean, activeReadingMessageId?: string | null) => void;
 
   sendMessage: (
   content: string,
@@ -41,6 +49,15 @@ export const createChatSlice =
   conversations: INITIAL_CONVERSATIONS,
 
   activeConversationId: "conv-1",
+
+  isRoastMode: false,
+  toggleRoastMode: () => set((state) => ({ isRoastMode: !state.isRoastMode })),
+  setRoastMode: (isRoastMode) => set({ isRoastMode }),
+
+  isReadingMode: false,
+  activeReadingMessageId: null,
+  setReadingMode: (isReadingMode, activeReadingMessageId = null) =>
+    set({ isReadingMode, activeReadingMessageId }),
 
   sendMessage: (content, codeSnippet, attachments) =>
     set((state) => {
