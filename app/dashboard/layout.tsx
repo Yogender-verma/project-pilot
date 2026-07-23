@@ -143,11 +143,13 @@ export default function DashboardLayout({
 
   // Live page search highlight logic using CSS Custom Highlight API
   useEffect(() => {
+    // @ts-ignore - CSS Custom Highlight API types might be missing in older TS
     if (typeof CSS === 'undefined' || !CSS.highlights) {
       return;
     }
 
     if (!pageSearchQuery.trim()) {
+      // @ts-ignore
       CSS.highlights.delete('search-results');
       setHasNoMatches(false);
       return;
@@ -201,10 +203,13 @@ export default function DashboardLayout({
       }
 
       if (ranges.length > 0) {
+        // @ts-ignore
         const highlight = new Highlight(...ranges);
+        // @ts-ignore
         CSS.highlights.set('search-results', highlight);
         setHasNoMatches(false);
       } else {
+        // @ts-ignore
         CSS.highlights.delete('search-results');
         setHasNoMatches(true);
       }
@@ -213,7 +218,8 @@ export default function DashboardLayout({
     const timeoutId = setTimeout(handleSearch, 50);
     return () => {
       clearTimeout(timeoutId);
-      CSS.highlights.delete('search-results');
+      // @ts-ignore
+      CSS.highlights?.delete('search-results');
     };
   }, [pageSearchQuery]);
 
