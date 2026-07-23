@@ -41,7 +41,7 @@ import { extractSkillsFromResume } from '@/app/actions/extractSkills';
 
 // Client API Handlers
 export default function SettingsPage() {
-  const { user, onboardingData, updateProfile, updateAvatar, updatePortfolioVisibility, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub, updateUserSkills } = useAppStore();
+  const { user, onboardingData, updateProfile, updateAvatar, updatePortfolioVisibility, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub, updateUserSkills, updateProfessionalLinks: updateLinksStore } = useAppStore();
 
   // Access the global theme state & setTheme so the user can pick directly
   const { theme, setTheme } = useTheme();
