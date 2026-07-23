@@ -33,6 +33,7 @@ import {
   Info,
   Sparkles
 } from 'lucide-react';
+import { generateAdaptiveDashboard } from "@/lib/adaptiveEngine";
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import React from 'react';
@@ -69,15 +70,146 @@ export default function MainDashboardPage() {
     setMounted(true);
   }, []);
 
+  // Comparison state
+  const [compareUsername, setCompareUsername] = React.useState("");
+  const [friendData, setFriendData] = React.useState<any | null>(null);
+  const [compareError, setCompareError] = React.useState<string | null>(null);
+  const [isComparing, setIsComparing] = React.useState(false);
+
+  // Dynamic score calculator based on user stack skills
+  const getDynamicScore = React.useCallback((skills: string[], type: 'ai' | 'db' | 'arch') => {
+    const normSkills = (skills || []).map(s => s.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    if (type === 'ai') {
+      const matches = normSkills.filter(s => 
+        s.includes('openai') || s.includes('ai') || s.includes('ml') || 
+        s.includes('python') || s.includes('langchain') || s.includes('llm') || 
+        s.includes('transformer') || s.includes('hugging') || s.includes('vector') ||
+        s.includes('fastapi')
+      ).length;
+      return Math.min(95, 30 + (matches * 15));
+    } else if (type === 'db') {
+      const matches = normSkills.filter(s => 
+        s.includes('postgres') || s.includes('mongo') || s.includes('mysql') || 
+        s.includes('sql') || s.includes('prisma') || s.includes('redis') || 
+        s.includes('database') || s.includes('db')
+      ).length;
+      return Math.min(95, 40 + (matches * 15));
+    } else { // arch
+      const matches = normSkills.filter(s => 
+        s.includes('docker') || s.includes('aws') || s.includes('systemdesign') || 
+        s.includes('architecture') || s.includes('microservice') || 
+        s.includes('kubernetes') || s.includes('cicd')
+      ).length;
+      return Math.min(95, 45 + (matches * 15));
+    }
+  }, []);
+
+  // Derive friend data if comparison active
+  const friendRadarData = React.useMemo(() => {
+    if (!friendData) return null;
+    
+    const friendUserMapped = {
+      id: friendData.id,
+      name: friendData.fullName || friendData.username || 'Friend',
+      username: friendData.username || undefined,
+      email: '',
+      avatarUrl: friendData.imageUrl || undefined,
+      careerGoal: friendData.dreamRole || 'Full Stack Developer',
+      skills: friendData.skills || [],
+    };
+    
+    const friendAdaptive = generateAdaptiveDashboard(friendUserMapped);
+    const friendSkills = friendData.skills || [];
+    
+    return {
+      frontendReadiness: friendAdaptive.careerScore.frontendReadiness,
+      backendReadiness: friendAdaptive.careerScore.backendReadiness,
+      devOpsReadiness: friendAdaptive.careerScore.devOpsReadiness,
+      aiOrchestration: getDynamicScore(friendSkills, 'ai'),
+      databases: getDynamicScore(friendSkills, 'db'),
+      architecture: getDynamicScore(friendSkills, 'arch'),
+      overallScore: friendAdaptive.careerScore.overallScore,
+      fullName: friendData.fullName || friendData.username || 'Friend'
+    };
+  }, [friendData, getDynamicScore]);
+
   // Radar chart formatted data
-  const radarData = [
-    { subject: "Frontend", A: careerScore.frontendReadiness, fullMark: 100 },
-    { subject: "Backend", A: careerScore.backendReadiness, fullMark: 100 },
-    { subject: "DevOps", A: careerScore.devOpsReadiness, fullMark: 100 },
-    { subject: "AI Orchestration", A: 40, fullMark: 100 }, // Mock scores representing missing skills gaps
-    { subject: "Databases", A: 60, fullMark: 100 },
-    { subject: "Architecture", A: 70, fullMark: 100 },
-  ];
+  const radarData = React.useMemo(() => [
+    { 
+      subject: "Frontend", 
+      A: careerScore.frontendReadiness, 
+      ...(friendRadarData ? { B: friendRadarData.frontendReadiness } : {}),
+      fullMark: 100 
+    },
+    { 
+      subject: "Backend", 
+      A: careerScore.backendReadiness, 
+      ...(friendRadarData ? { B: friendRadarData.backendReadiness } : {}),
+      fullMark: 100 
+    },
+    { 
+      subject: "DevOps", 
+      A: careerScore.devOpsReadiness, 
+      ...(friendRadarData ? { B: friendRadarData.devOpsReadiness } : {}),
+      fullMark: 100 
+    },
+    { 
+      subject: "AI Orchestration", 
+      A: getDynamicScore(user?.skills || [], 'ai'), 
+      ...(friendRadarData ? { B: friendRadarData.aiOrchestration } : {}),
+      fullMark: 100 
+    },
+    { 
+      subject: "Databases", 
+      A: getDynamicScore(user?.skills || [], 'db'), 
+      ...(friendRadarData ? { B: friendRadarData.databases } : {}),
+      fullMark: 100 
+    },
+    { 
+      subject: "Architecture", 
+      A: getDynamicScore(user?.skills || [], 'arch'), 
+      ...(friendRadarData ? { B: friendRadarData.architecture } : {}),
+      fullMark: 100 
+    },
+  ], [careerScore, user?.skills, friendRadarData, getDynamicScore]);
+
+  const handleCompare = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const handle = compareUsername.trim();
+    if (!handle) return;
+
+    if (handle.toLowerCase() === (user?.username || "").toLowerCase() || 
+        handle.toLowerCase() === (clerkUser?.username || "").toLowerCase()) {
+      setCompareError("You cannot compare with yourself.");
+      setFriendData(null);
+      return;
+    }
+
+    setIsComparing(true);
+    setCompareError(null);
+    try {
+      const res = await fetch(`/api/public/${encodeURIComponent(handle)}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setCompareError(errData.error || "Developer not found or portfolio is private.");
+        setFriendData(null);
+      } else {
+        const data = await res.json();
+        setFriendData(data);
+      }
+    } catch (err) {
+      setCompareError("Failed to fetch developer profile.");
+      setFriendData(null);
+    } finally {
+      setIsComparing(false);
+    }
+  };
+
+  const handleClearCompare = () => {
+    setCompareUsername("");
+    setFriendData(null);
+    setCompareError(null);
+  };
 
   // Bar chart formatted commit activities
   const commitData = githubAnalytics.recentCommits;
@@ -140,8 +272,8 @@ export default function MainDashboardPage() {
           glowColor="#6366f1"
           className="bg-[#08051e]/40 lg:col-span-2 flex flex-col justify-between"
         >
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div>
+          <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/5">
+            <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-base font-bold">
                   Career Skill Match Blueprint
@@ -158,10 +290,69 @@ export default function MainDashboardPage() {
                 Granular analysis across standard full-stack categories.
               </CardDescription>
             </div>
-            <Badge variant="glow">Score: {careerScore.overallScore}%</Badge>
+            
+            <div className="flex flex-col items-start md:items-end gap-2 shrink-0">
+              <div className="flex flex-wrap gap-2 items-center">
+                <Badge variant="glow">Score: {careerScore.overallScore}%</Badge>
+                {friendRadarData && (
+                  <Badge variant="success" className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                    vs {friendRadarData.fullName} ({friendRadarData.overallScore}%)
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Compare form */}
+              <div className="space-y-1 w-full md:w-auto">
+                <form onSubmit={handleCompare} className="flex gap-2 w-full">
+                  <input
+                    type="text"
+                    placeholder="Compare with developer..."
+                    value={compareUsername}
+                    onChange={(e) => {
+                      setCompareUsername(e.target.value);
+                      if (compareError) setCompareError(null);
+                    }}
+                    className={`h-8 text-xs rounded-xl px-3 bg-white/5 border text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all w-full md:w-40 ${
+                      compareError ? 'border-rose-500/50' : 'border-white/10'
+                    }`}
+                    disabled={isComparing}
+                  />
+                  <Button
+                    type="submit"
+                    variant="glow"
+                    size="sm"
+                    className="h-8 text-xs font-semibold shrink-0 py-0 px-3"
+                    isLoading={isComparing}
+                    disabled={!compareUsername.trim()}
+                  >
+                    Compare
+                  </Button>
+                  {friendData && (
+                    <Button
+                      type="button"
+                      variant="glass"
+                      size="sm"
+                      className="h-8 text-xs shrink-0 py-0 px-3"
+                      onClick={handleClearCompare}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </form>
+                {compareError && (
+                  <p className="text-[10px] text-rose-400 font-medium text-left md:text-right">
+                    {compareError}
+                  </p>
+                )}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="h-[280px] sm:h-[320px] flex items-center justify-center pt-4">
-            <SkillRadarChart data={radarData} />
+            <SkillRadarChart
+              data={radarData}
+              userName={user?.name || clerkUser?.firstName || 'You'}
+              friendName={friendRadarData?.fullName}
+            />
           </CardContent>
           <CardFooter className="pt-2 flex items-center justify-between text-xs text-slate-400">
             <span>Core Match rate: 78%</span>

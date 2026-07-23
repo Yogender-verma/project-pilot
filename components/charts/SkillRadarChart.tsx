@@ -7,20 +7,28 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-  Radar
+  Radar,
+  Legend
 } from 'recharts';
 
 export interface SkillRadarItem {
   subject: string;
   A: number;
+  B?: number;
   fullMark: number;
 }
 
 interface SkillRadarChartProps {
   data: SkillRadarItem[];
+  userName?: string;
+  friendName?: string;
 }
 
-export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({ data }) => {
+export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
+  data,
+  userName = 'You',
+  friendName
+}) => {
   return (
     <div className="w-full h-full outline-none focus:outline-none [&_*]:outline-none [&_*]:focus:outline-none [&_svg]:outline-none select-none">
       <ResponsiveContainer width="100%" height="100%" style={{ outline: 'none' }}>
@@ -34,12 +42,32 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({ data }) => {
           />
           <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="rgba(255, 255, 255, 0.1)" />
           <Radar
-            name="Skill Match"
+            name={userName}
             dataKey="A"
-            stroke="#8b5cf6"
-            fill="#6366f1"
-            fillOpacity={0.4}
+            stroke="#a855f7"
+            fill="#a855f7"
+            fillOpacity={0.25}
           />
+          {friendName && (
+            <Radar
+              name={friendName}
+              dataKey="B"
+              stroke="#6366f1"
+              fill="#6366f1"
+              fillOpacity={0.35}
+            />
+          )}
+          {friendName && (
+            <Legend
+              iconType="circle"
+              iconSize={8}
+              wrapperStyle={{
+                fontSize: '11px',
+                paddingTop: '10px',
+                color: 'var(--text-muted)'
+              }}
+            />
+          )}
         </RadarChart>
       </ResponsiveContainer>
     </div>
