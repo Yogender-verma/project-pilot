@@ -4,7 +4,7 @@ import React, { use, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import {
+import { CustomCursor } from '@/components/ui/CustomCursor';import {
   User as UserIcon,
   Globe,
   Award,
@@ -157,9 +157,11 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
   const userProjects = dbProfile?.projects || projects || [];
 
   return (
-    <div className="min-h-screen bg-[#070514] text-slate-100 selection:bg-indigo-500 selection:text-white print:bg-white print:text-slate-900">
-      {/* Print-specific Optimizations (@media print) */}
-      <style jsx global>{`
+<div className="min-h-screen bg-[#070514] text-slate-100 selection:bg-indigo-500 selection:text-white print:bg-white print:text-slate-900">
+      {/* Glowing custom cursor - desktop only, auto-disabled on touch devices */}
+      <CustomCursor />
+
+      {/* Print-specific Optimizations (@media print) */}      <style jsx global>{`
         @media print {
           @page {
             size: A4;
