@@ -484,8 +484,16 @@ export default function DashboardLayout({
             projects={projects}
             onProjectSelect={selectProject}
           />
-          {hasNoMatches ? (
-            <div id="search-empty-state">
+          
+          {/* Always render children so page state (e.g. Settings forms) isn't destroyed! */}
+          {children}
+
+          {/* Overlay EmptyState when there are no matches */}
+          {hasNoMatches && (
+            <div 
+              id="search-empty-state" 
+              className="absolute top-1/4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md bg-[var(--background)] shadow-2xl rounded-2xl p-2 border border-indigo-500/20 backdrop-blur-sm"
+            >
               <EmptyState
                 title="No results found"
                 description={`We couldn't find any matches for "${pageSearchQuery}" on this page.`}
@@ -494,8 +502,6 @@ export default function DashboardLayout({
                 onClick={() => setPageSearchQuery('')}
               />
             </div>
-          ) : (
-            children
           )}
         </div>
       </div>
