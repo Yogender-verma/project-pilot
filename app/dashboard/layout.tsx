@@ -32,7 +32,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, careerScore, projects, selectProject, syncUserProfile } = useAppStore();
+  const { user, careerScore, projects, selectProject, syncUserProfile, isReadingMode } = useAppStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -136,166 +136,171 @@ export default function DashboardLayout({
       <div className="absolute bottom-[20%] left-[-10%] w-[400px] h-[400px] rounded-full bg-purple-600/5 blur-[120px] pointer-events-none" />
 
       {/* Desktop Sidebar (Left Panel) */}
-      <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+      {!isReadingMode && (
+        <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+      )}
 
       {/* Main Workspace Frame (Right Panel) */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto h-screen relative">
         {/* Mobile Header (Topbar for small viewports) */}
-        <header
-          className="md:hidden flex items-center justify-between min-h-[84px] py-4 px-6 border-b sticky top-0 z-40 backdrop-blur-xl"
-          style={{
-            backgroundColor: 'color-mix(in srgb, var(--surface-primary) 90%, transparent)',
-            borderColor: 'var(--border-subtle)',
-          }}
-        >
-          <Link href="/dashboard" className="flex items-center space-x-3 group">
-            <div className="p-2.5 bg-indigo-500/15 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-md">
-              <Compass className="w-6 h-6" />
-            </div>
-            <span
-              className="text-lg font-extrabold tracking-wider select-none"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              Pilot<span className="text-indigo-400">AI</span>
-            </span>
-          </Link>
-
-          <div className="flex items-center space-x-3">
-            {/* Mobile theme toggle */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={!mounted ? 'Switch theme' : `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-              className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
-              style={{
-                borderColor: 'var(--border-subtle)',
-                color: 'var(--text-secondary)',
-                backgroundColor: 'var(--hover-bg)',
-              }}
-            >
-              {!mounted ? (
-                <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
-              ) : theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
-              ) : (
-                <Moon className="w-5 h-5 text-indigo-400" aria-hidden="true" />
-              )}
-            </button>
-
-            {/* Mobile Notifications button */}
-            <NotificationCenter mobile={true} />
-
-            {/* Mobile Menu (Hamburger) button */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Open navigation drawer"
-              aria-expanded={mobileMenuOpen}
-              aria-controls="mobile-drawer"
-              className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
-              style={{
-                borderColor: 'var(--border-subtle)',
-                color: 'var(--text-secondary)',
-                backgroundColor: 'var(--hover-bg)',
-              }}
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </header>
-
-        {/* Global Desktop Workspace Topbar */}
-        <header
-          className="hidden md:flex items-center justify-between min-h-[88px] py-4 px-8 border-b sticky top-0 backdrop-blur-xl z-30 shadow-sm"
-          style={{
-            backgroundColor: 'color-mix(in srgb, var(--surface-primary) 90%, transparent)',
-            borderColor: 'var(--border-subtle)',
-          }}
-        >
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-              {getPageTitle()}
-            </h1>
-            <Badge variant="glow" className="text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full border border-indigo-500/30">
-              Ready Score: {careerScore.overallScore}%
-            </Badge>
-          </div>
-
-          {/* Top Actions: Search, Theme, Notify, Profile */}
-          <div className="flex items-center space-x-4">
-            {/* Functional global command search */}
-            <button
-              type="button"
-              onClick={() => setCommandPaletteOpen(true)}
-              aria-label="Open global search (Ctrl K)"
-              title="Open global search (Ctrl K)"
-              className="hidden sm:flex items-center gap-3.5 h-11 min-w-60 lg:min-w-72 px-4 rounded-2xl border transition-all cursor-pointer hover:border-indigo-500/40 hover:bg-indigo-500/5 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-              style={{
-                borderColor: 'var(--border-subtle)',
-                backgroundColor: 'var(--hover-bg)',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <Search className="w-4.5 h-4.5 text-indigo-400 shrink-0" aria-hidden="true" />
-              <span className="text-xs font-medium flex-1 text-left">Search pages and projects...</span>
-              <kbd className="hidden lg:inline-flex rounded-lg border border-white/10 bg-white/10 px-2 py-0.5 text-[11px] font-mono text-slate-400">
-                Ctrl K
-              </kbd>
-            </button>
-
-            {/* AI Career readiness Quick Summary Widget */}
-            <Link
-              href="/dashboard/career"
-              aria-label={`Career Score: ${careerScore.overallScore}% match rate`}
-              title="View Career Readiness Score breakdown"
-              className="flex items-center space-x-2.5 px-4 py-2.5 bg-indigo-500/10 rounded-2xl border border-indigo-500/25 text-xs font-bold text-indigo-400 hover:bg-indigo-500/15 transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-            >
-              <Award className="w-4 h-4 animate-bounce" aria-hidden="true" />
-              <span>Career Score: {careerScore.overallScore}%</span>
+        {!isReadingMode && (
+          <header
+            className="md:hidden flex items-center justify-between min-h-[84px] py-4 px-6 border-b sticky top-0 z-40 backdrop-blur-xl"
+            style={{
+              backgroundColor: 'color-mix(in srgb, var(--surface-primary) 90%, transparent)',
+              borderColor: 'var(--border-subtle)',
+            }}
+          >
+            <Link href="/dashboard" className="flex items-center space-x-3 group">
+              <div className="p-2.5 bg-indigo-500/15 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-md">
+                <Compass className="w-6 h-6" />
+              </div>
+              <span
+                className="text-lg font-extrabold tracking-wider select-none"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                Pilot<span className="text-indigo-400">AI</span>
+              </span>
             </Link>
 
-            {/* Theme Switcher Toggle */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={!mounted ? 'Switch theme' : `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-              title={!mounted ? 'Switch theme' : `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-              className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-              style={{
-                borderColor: 'var(--border-subtle)',
-                color: 'var(--text-secondary)',
-                backgroundColor: 'var(--hover-bg)',
-              }}
-            >
-              {!mounted ? (
-                <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
-              ) : theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
-              ) : (
-                <Moon className="w-5 h-5 text-indigo-400" aria-hidden="true" />
-              )}
-            </button>
+            <div className="flex items-center space-x-3">
+              {/* Mobile theme toggle */}
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={!mounted ? 'Switch theme' : `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+                className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
+                style={{
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-secondary)',
+                  backgroundColor: 'var(--hover-bg)',
+                }}
+              >
+                {!mounted ? (
+                  <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                ) : theme === 'dark' ? (
+                  <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                ) : (
+                  <Moon className="w-5 h-5 text-indigo-400" aria-hidden="true" />
+                )}
+              </button>
 
-            {/* Notifications panel trigger */}
-            <NotificationCenter />
-          </div>
-        </header>
+              {/* Mobile Notifications button */}
+              <NotificationCenter mobile={true} />
+
+              {/* Mobile Menu (Hamburger) button */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Open navigation drawer"
+                className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
+                style={{
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-secondary)',
+                  backgroundColor: 'var(--hover-bg)',
+                }}
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
+          </header>
+        )}
+
+        {/* Global Desktop Workspace Topbar */}
+        {!isReadingMode && (
+          <header
+            className="hidden md:flex items-center justify-between min-h-[88px] py-4 px-8 border-b sticky top-0 backdrop-blur-xl z-30 shadow-sm"
+            style={{
+              backgroundColor: 'color-mix(in srgb, var(--surface-primary) 90%, transparent)',
+              borderColor: 'var(--border-subtle)',
+            }}
+          >
+            <div className="flex items-center space-x-4">
+              <h1 className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                {getPageTitle()}
+              </h1>
+              <Badge variant="glow" className="text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full border border-indigo-500/30">
+                Ready Score: {careerScore.overallScore}%
+              </Badge>
+            </div>
+
+            {/* Top Actions: Search, Theme, Notify, Profile */}
+            <div className="flex items-center space-x-4">
+              {/* Functional global command search */}
+              <button
+                type="button"
+                onClick={() => setCommandPaletteOpen(true)}
+                aria-label="Open global search (Ctrl K)"
+                title="Open global search (Ctrl K)"
+                className="hidden sm:flex items-center gap-3.5 h-11 min-w-60 lg:min-w-72 px-4 rounded-2xl border transition-all cursor-pointer hover:border-indigo-500/40 hover:bg-indigo-500/5 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                style={{
+                  borderColor: 'var(--border-subtle)',
+                  backgroundColor: 'var(--hover-bg)',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                <Search className="w-4.5 h-4.5 text-indigo-400 shrink-0" aria-hidden="true" />
+                <span className="text-xs font-medium flex-1 text-left">Search pages and projects...</span>
+                <kbd className="hidden lg:inline-flex rounded-lg border border-white/10 bg-white/10 px-2 py-0.5 text-[11px] font-mono text-slate-400">
+                  Ctrl K
+                </kbd>
+              </button>
+
+              {/* AI Career readiness Quick Summary Widget */}
+              <Link
+                href="/dashboard/career"
+                aria-label={`Career Score: ${careerScore.overallScore}% match rate`}
+                title="View Career Readiness Score breakdown"
+                className="flex items-center space-x-2.5 px-4 py-2.5 bg-indigo-500/10 rounded-2xl border border-indigo-500/25 text-xs font-bold text-indigo-400 hover:bg-indigo-500/15 transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                <Award className="w-4 h-4 animate-bounce" aria-hidden="true" />
+                <span>Career Score: {careerScore.overallScore}%</span>
+              </Link>
+
+              {/* Theme Switcher Toggle */}
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={!mounted ? 'Switch theme' : `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+                title={!mounted ? 'Switch theme' : `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+                className="p-3 rounded-2xl border transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                style={{
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-secondary)',
+                  backgroundColor: 'var(--hover-bg)',
+                }}
+              >
+                {!mounted ? (
+                  <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                ) : theme === 'dark' ? (
+                  <Sun className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                ) : (
+                  <Moon className="w-5 h-5 text-indigo-400" aria-hidden="true" />
+                )}
+              </button>
+
+              {/* Notifications panel trigger */}
+              <NotificationCenter />
+            </div>
+          </header>
+        )}
 
         {/* Mobile Sidebar Navigation Drawer */}
-        <MobileDrawer isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+        {!isReadingMode && (
+          <MobileDrawer isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+        )}
 
         {/* Main Dashboard Pages Slot (Children content) */}
-        <div className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto relative z-10">
+        <div className={isReadingMode ? "flex-1 w-full relative z-10" : "flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto relative z-10"}>
           <CommandPalette
-  open={commandPaletteOpen}
-  onOpenChange={setCommandPaletteOpen}
-  projects={projects}
-  onProjectSelect={selectProject}
-/>
-{children}
+            open={commandPaletteOpen}
+            onOpenChange={setCommandPaletteOpen}
+            projects={projects}
+            onProjectSelect={selectProject}
+          />
+          {children}
         </div>
       </div>
     </div>
   );
 }
-

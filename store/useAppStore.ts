@@ -120,7 +120,7 @@ const INITIAL_ROADMAPS: Record<string, Roadmap> = {
 const INITIAL_CONVERSATIONS: ChatConversation[] = [
   {
     id: 'conv-1',
-    title: 'New Conversation',
+    title: 'AI Mentor Session',
     lastUpdated: new Date(),
     messages: [
       {
@@ -321,6 +321,16 @@ interface AppStore {
   // Career Score State
   careerScore: CareerScore;
   recalculateCareerScore: () => void;
+
+  // Roast Mode State
+  isRoastMode: boolean;
+  toggleRoastMode: () => void;
+  setRoastMode: (isRoastMode: boolean) => void;
+
+  // Reading Mode State
+  isReadingMode: boolean;
+  activeReadingMessageId: string | null;
+  setReadingMode: (isReadingMode: boolean, activeReadingMessageId?: string | null) => void;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -1032,5 +1042,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
         overallScore: newScore
       }
     };
+  }),
+
+  // Roast Mode State
+  isRoastMode: false,
+  toggleRoastMode: () => set((state) => ({ isRoastMode: !state.isRoastMode })),
+  setRoastMode: (isRoastMode) => set({ isRoastMode }),
+
+  // Reading Mode State
+  isReadingMode: false,
+  activeReadingMessageId: null,
+  setReadingMode: (isReadingMode, activeReadingMessageId = null) => set({
+    isReadingMode,
+    activeReadingMessageId
   })
 }));

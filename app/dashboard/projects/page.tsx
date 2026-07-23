@@ -283,9 +283,7 @@ export default function RecommendedProjectsPage() {
                       hoverEffect={false}
                       className={`relative border bg-[#070519]/95 rounded-2xl h-full transition-all duration-300 ${
                         borderStyles[project.difficulty] || 'border-white/5'
-                      } ${
-                        view === 'grid' ? 'flex h-full flex-col justify-between' : 'lg:flex lg:items-center lg:gap-6'
-                      }`}
+                      } flex h-full flex-col justify-between`}
                       style={{
                         backgroundImage: `
                           radial-gradient(at 0% 64%, ${themeColor}12 0px, transparent 80%),
@@ -302,7 +300,7 @@ export default function RecommendedProjectsPage() {
                         </div>
                       )}
 
-                      <div className={`space-y-4 w-full ${view === 'list' ? 'min-w-0 flex-1' : ''}`}>
+                      <div className="space-y-4 w-full">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant={diffColors[project.difficulty] || 'default'}>
@@ -346,7 +344,7 @@ export default function RecommendedProjectsPage() {
                           </span>
                         </div>
 
-                        <p className={`text-xs leading-relaxed text-slate-400 ${view === 'grid' ? 'line-clamp-3' : 'line-clamp-2'}`}>
+                        <p className="text-xs leading-relaxed text-slate-400 line-clamp-3">
                           {project.description}
                         </p>
 
@@ -370,7 +368,7 @@ export default function RecommendedProjectsPage() {
                       </div>
 
                       <CardFooter
-                        className={`${view === 'grid' ? 'mt-6 border-t pt-2 w-full' : 'mt-5 shrink-0 border-t pt-4 lg:mt-0 lg:w-64 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0 w-full'}`}
+                        className="mt-6 border-t pt-2 w-full"
                         style={{ borderColor: 'var(--border-subtle)' }}
                       >
                         <Button
