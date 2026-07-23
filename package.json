@@ -16,6 +16,7 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@radix-ui/react-tooltip": "^1.2.13",
+    "@sentry/nextjs": "^8.0.0",
     "@uploadthing/react": "^7.3.3",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
