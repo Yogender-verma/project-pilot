@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { AnimatePresence, motion } from 'framer-motion';
 import { getCurrentUserProfile } from '@/app/actions/user';
 import { CommandPalette } from '@/components/dashboard/CommandPalette';
 import { MobileDrawer } from '@/components/layout/MobileDrawer';
@@ -12,7 +11,6 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
 import { useTheme } from '@/lib/ThemeProvider';
 import { useAppStore } from '@/store/useAppStore';
 import {
@@ -22,9 +20,7 @@ import {
   Moon,
   Search,
   Sun,
-  X,
-  ChevronDown,
-  Sparkles
+  X
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -33,7 +29,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, careerScore, projects, selectProject, syncUserProfile, isReadingMode } = useAppStore();
+  const { careerScore, projects, selectProject, syncUserProfile, isReadingMode } = useAppStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -174,7 +170,9 @@ export default function DashboardLayout({
           try {
             const style = window.getComputedStyle(el);
             if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return;
-          } catch (e) {}
+          } catch {
+            // safe fallback
+          }
 
           for (let i = 0; i < node.childNodes.length; i++) walk(node.childNodes[i]);
         } else {
@@ -195,7 +193,9 @@ export default function DashboardLayout({
             range.setStart(node, index);
             range.setEnd(node, index + pageSearchQuery.length);
             ranges.push(range);
-          } catch (e) {}
+          } catch {
+            // safe fallback
+          }
           index = text.indexOf(normalizedQuery, index + pageSearchQuery.length);
         }
       }
