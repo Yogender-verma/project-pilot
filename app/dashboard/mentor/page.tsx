@@ -38,7 +38,9 @@ export default function AiMentorChatPage() {
     activeReadingMessageId,
     setReadingMode,
     isRoastMode,
-    toggleRoastMode
+    toggleRoastMode,
+    isMockInterview,
+    toggleMockInterview
   } = useAppStore();
 
   const [inputMessage, setInputMessage] = useState('');
@@ -229,6 +231,10 @@ export default function AiMentorChatPage() {
     { label: 'Help me write my Docker-compose', value: 'Help me draft a docker-compose file for a Golang collector and Redis cache.' },
     { label: 'Suggest vector database steps', value: 'How should I configure Pinecone to index and match vector action logs?' }
   ];
+  const interviewTopics = ['Frontend Developer', 'Backend Developer', 'Full Stack', 'React', 'Node.js', 'Java', 'Python', 'C++', 'Data Structures', 'System Design'];
+  const hasInterviewStarted = activeConv?.messages.some(
+    (message) => message.role === 'user' && /start a .+ mock interview\./i.test(message.content)
+  );
 
   return (
     <div className="flex h-[80vh] border rounded-3xl overflow-hidden glass-panel" style={{ borderColor: 'var(--border-subtle)' }}>
@@ -297,11 +303,20 @@ export default function AiMentorChatPage() {
                 {activeConv?.title || 'Mentor Guidance'}
               </h3>
               <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                {isRoastMode ? '🔥 Roast Mode Active' : 'Context: Active Match Blueprint and Roadmap'}
+                {isMockInterview ? '🎤 Mock Interview in Progress' : isRoastMode ? '🔥 Roast Mode Active' : 'Context: Active Match Blueprint and Roadmap'}
               </p>
             </div>
           </div>
           <div className="flex items-center space-x-3.5">
+            {isMockInterview && (
+              <button
+                type="button"
+                onClick={() => sendMessage('End the interview and generate my final report.', undefined, undefined, { endInterview: true })}
+                className="px-3.5 py-1.5 rounded-full text-[10px] font-bold tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/40 hover:bg-rose-500/30 transition-all active:scale-95 cursor-pointer"
+              >
+                End Interview
+              </button>
+            )}
             <button
               type="button"
               onClick={toggleRoastMode}
@@ -315,6 +330,19 @@ export default function AiMentorChatPage() {
               <Flame className={`w-3.5 h-3.5 ${isRoastMode ? 'text-rose-400 animate-bounce' : ''}`} />
               <span>{isRoastMode ? 'ROAST MODE ON' : 'ROAST MODE'}</span>
             </button>
+            <button
+              type="button"
+              onClick={toggleMockInterview}
+              title={isMockInterview ? 'Disable Mock Interview' : 'Enable AI Mock Interview'}
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold tracking-wider transition-all transform active:scale-95 border cursor-pointer ${
+                isMockInterview
+                  ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-[0_0_15px_rgba(99,102,241,0.3)] animate-pulse font-extrabold'
+                  : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-300'
+              }`}
+            >
+              <span>🎤</span>
+              <span>{isMockInterview ? 'MOCK INTERVIEW ON' : 'MOCK INTERVIEW'}</span>
+            </button>
 
             <Badge variant="glow" className="text-[10px] font-mono">
               ONLINE
@@ -326,6 +354,23 @@ export default function AiMentorChatPage() {
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {activeConv?.messages.map((msg) => {
             const isUser = msg.role === 'user';
+            const scoreMatch = !isUser ? msg.content.match(/(?:^|\n)\s*Score\s*:\s*(10|[0-9])\s*\/\s*10/i) : null;
+            const score = scoreMatch ? Number(scoreMatch[1]) : null;
+            const isFinalReport = !isUser && /Overall Score/i.test(msg.content) && /Strengths/i.test(msg.content) && /Weaknesses/i.test(msg.content) && /Topics to Improve/i.test(msg.content) && /Hiring Recommendation/i.test(msg.content);
+            const isInterviewQuestion = !isUser && isMockInterview && !isFinalReport && /\?/.test(msg.content);
+            const questionNumber = activeConv.messages.slice(0, activeConv.messages.indexOf(msg) + 1).filter((message) =>
+              message.role === 'assistant' && /\?/.test(message.content)
+            ).length;
+            const difficulty = msg.content.match(/(?:Difficulty\s*:\s*|\b)(Easy|Medium|Hard)\b/i)?.[1] || 'Medium';
+            const reportSections = isFinalReport
+              ? ['Overall Score', 'Strengths', 'Weaknesses', 'Topics to Improve', 'Hiring Recommendation'].map((heading, index, headings) => {
+                  const nextHeading = headings[index + 1];
+                  const headingPattern = heading === 'Strengths' ? '(?:Technical\\s+)?Strengths' : heading;
+                  const nextHeadingPattern = nextHeading === 'Strengths' ? '(?:Technical\\s+)?Strengths' : nextHeading || '$';
+                  const pattern = new RegExp(`(?:^|\\n)\\s*(?:[-*]\\s*)?(?:##?\\s*)?${headingPattern}\\s*:?\\s*([\\s\\S]*?)(?=\\n\\s*(?:[-*]\\s*)?(?:##?\\s*)?${nextHeadingPattern}\\s*:?|$)`, 'i');
+                  return { heading, content: msg.content.match(pattern)?.[1]?.trim() || 'Not provided.' };
+                })
+              : [];
             
             return (
               <div 
@@ -347,6 +392,12 @@ export default function AiMentorChatPage() {
                 }`}
                 style={!isUser ? { backgroundColor: 'var(--hover-bg-strong)', borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' } : {}}
                 >
+                  {isInterviewQuestion && (
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-[10px] font-bold text-indigo-300">
+                      <span>Question #{questionNumber}</span>
+                      <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-indigo-200">{difficulty}</span>
+                    </div>
+                  )}
                   {!isUser && (
                     <button
                       onClick={() => setReadingMode(true, msg.id)}
@@ -358,7 +409,28 @@ export default function AiMentorChatPage() {
                   )}
                   
                   {/* Text content rendering */}
-                  <p className="whitespace-pre-line">{msg.content}</p>
+                  {isFinalReport ? (
+                    <div className="space-y-2.5">
+                      {reportSections.map((section) => (
+                        <div key={section.heading} className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">{section.heading}</p>
+                          <p className="mt-1 whitespace-pre-line">{section.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <p className="whitespace-pre-line">{msg.content}</p>
+                      {score !== null && (
+                        <div className={`rounded-xl border p-3 text-center ${
+                          score >= 8 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : score >= 5 ? 'border-amber-500/30 bg-amber-500/10 text-amber-300' : 'border-rose-500/30 bg-rose-500/10 text-rose-300'
+                        }`}>
+                          <p className="text-[10px] font-bold uppercase tracking-wider">⭐ Score</p>
+                          <p className="mt-1 text-2xl font-extrabold">{score}/10</p>
+                        </div>
+                      )}
+                    </>
+                  )}
 
                   {/* Render attachments if any */}
                   {msg.attachments && msg.attachments.map((file, idx) => (
@@ -412,7 +484,28 @@ export default function AiMentorChatPage() {
         </div>
 
         {/* Dynamic prompt suggestions list at the bottom */}
-        {activeConv?.messages.length <= 1 && (
+        {isMockInterview && !hasInterviewStarted ? (
+          <div className="px-6 py-3 shrink-0">
+            <Card className="border-indigo-500/20 bg-indigo-500/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-indigo-200">AI Technical Mock Interview</CardTitle>
+                <CardDescription>Practice a realistic technical interview tailored to your skills.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                {interviewTopics.map((topic) => (
+                  <button
+                    key={topic}
+                    onClick={() => sendMessage(`Start a ${topic} mock interview.`)}
+                    className="px-3 py-2 border rounded-xl text-left text-[11px] text-indigo-300 font-semibold cursor-pointer transition-all hover:bg-indigo-500/10"
+                    style={{ borderColor: 'var(--border-subtle)' }}
+                  >
+                    {topic}
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        ) : activeConv?.messages.length <= 1 && (
           <div className="px-6 py-2 flex flex-wrap gap-2 shrink-0">
             {suggestedPrompts.map((p, idx) => (
               <button

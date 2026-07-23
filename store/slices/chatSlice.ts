@@ -15,6 +15,10 @@ export interface ChatSlice {
   toggleRoastMode: () => void;
   setRoastMode: (isRoastMode: boolean) => void;
 
+  isMockInterview: boolean;
+  toggleMockInterview: () => void;
+  setMockInterview: (enabled: boolean) => void;
+
   isReadingMode: boolean;
   activeReadingMessageId: string | null;
   setReadingMode: (isReadingMode: boolean, activeReadingMessageId?: string | null) => void;
@@ -29,7 +33,10 @@ export interface ChatSlice {
     name: string;
     size: string;
     type: string;
-  }[]
+  }[],
+  options?: {
+    endInterview?: boolean;
+  }
 ) => void;
 
   createNewConversation: (title?: string) => string;
@@ -51,18 +58,37 @@ export const createChatSlice =
   activeConversationId: "conv-1",
 
   isRoastMode: false,
-  toggleRoastMode: () => set((state) => ({ isRoastMode: !state.isRoastMode })),
-  setRoastMode: (isRoastMode) => set({ isRoastMode }),
+  toggleRoastMode: () => set((state) => {
+    const isRoastMode = !state.isRoastMode;
+    return { isRoastMode, isMockInterview: isRoastMode ? false : state.isMockInterview };
+  }),
+  setRoastMode: (isRoastMode) => set((state) => ({
+    isRoastMode,
+    isMockInterview: isRoastMode ? false : state.isMockInterview
+  })),
+
+  isMockInterview: false,
+  toggleMockInterview: () => set((state) => {
+    const isMockInterview = !state.isMockInterview;
+    return { isMockInterview, isRoastMode: isMockInterview ? false : state.isRoastMode };
+  }),
+  setMockInterview: (enabled) => set((state) => ({
+    isMockInterview: enabled,
+    isRoastMode: enabled ? false : state.isRoastMode
+  })),
 
   isReadingMode: false,
   activeReadingMessageId: null,
   setReadingMode: (isReadingMode, activeReadingMessageId = null) =>
     set({ isReadingMode, activeReadingMessageId }),
 
-  sendMessage: (content, codeSnippet, attachments) =>
+  sendMessage: (content, codeSnippet, attachments, options) =>
     set((state) => {
 
       const activeId = state.activeConversationId;
+      const isRoastMode = state.isRoastMode;
+      const isMockInterview = state.isMockInterview;
+      const endInterview = options?.endInterview ?? false;
 
       if (!activeId) return {};
 
@@ -136,7 +162,10 @@ export const createChatSlice =
             },
             body:JSON.stringify({
               messages:apiMessages,
-              userContext:get().user||DEFAULT_USER
+              userContext:get().user||DEFAULT_USER,
+              isRoastMode,
+              isMockInterview,
+              endInterview
             })
           });
 
