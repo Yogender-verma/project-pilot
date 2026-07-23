@@ -29,7 +29,7 @@ export function generateAdaptiveDashboard(user: User): {
   const totalRequired = requiredSkills.length;
   const matchCount = knownSkills.length;
   
-  let overallScore = Math.max(Math.round((matchCount / totalRequired) * 100), 60);
+  const overallScore = Math.max(Math.round((matchCount / totalRequired) * 100), 60);
   const resumeScore = Math.max(overallScore + 15, 50);
 
   const formattedMissing = missingSkills.slice(0, 5).map((skill, index) => ({
