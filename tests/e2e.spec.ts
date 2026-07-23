@@ -20,6 +20,6 @@ test.describe('E2E Test Suite', () => {
     await page.goto('/dashboard/mentor');
     
     // Wait for the mentor chat interface to load with automatic retry/waiting
-    await expect(page.getByText('Mentor').first()).toBeVisible();
+    await expect(page.getByText(/Mentor/i).first()).toBeVisible();
   });
 });

@@ -35,9 +35,9 @@ async function getAuthenticatedUserId(): Promise<string> {
 }
 
 /**
- * Fetches all projects associated with the current user.
+ * Fetches all projects associated with the current user with pagination support.
  */
-export async function getUserProjects() {
+export async function getUserProjects(take?: number, skip?: number) {
   try {
     const clerkId = await getAuthenticatedUserId();
     
@@ -46,6 +46,8 @@ export async function getUserProjects() {
       where: { clerkId },
       include: {
         projects: {
+          ...(take !== undefined ? { take } : {}),
+          ...(skip !== undefined ? { skip } : {}),
           include: {
             activities: {
               orderBy: { createdAt: 'desc' }

@@ -27,21 +27,37 @@ import {
   Download,
   Upload
 } from 'lucide-react';
-import { Github, Linkedin } from '@/components/ui/BrandIcons';
-import { useAppStore } from '@/store/useAppStore';
-import { getProfessionalLinks, updateProfessionalLinks } from '@/app/actions/user';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { Github, Linkedin } from '@/components/ui/BrandIcons';
 import { Button } from '@/components/ui/Button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { useTheme } from '@/lib/ThemeProvider';
 import type { Theme } from '@/lib/ThemeProvider';
-import { updateUserSkillsInDb } from '@/app/actions/user';
+import { useAppStore } from '@/store/useAppStore';
+import { useTheme } from '@/lib/ThemeProvider';
+import { 
+  getProfessionalLinks, 
+  updateProfessionalLinks, 
+  updateUserSkillsInDb, 
+  updateProfileAvatar 
+} from '@/app/actions/user';
 import { extractSkillsFromResume } from '@/app/actions/extractSkills';
+import { toast } from 'sonner'; 
 
-// Client API Handlers
 export default function SettingsPage() {
-  const { user, onboardingData, updateProfile, updateAvatar, updatePortfolioVisibility, resetOnboarding, githubAnalytics, connectGithub, disconnectGithub, updateUserSkills } = useAppStore();
+  const { 
+    user, 
+    onboardingData, 
+    updateProfile, 
+    updateAvatar, 
+    updatePortfolioVisibility, 
+    resetOnboarding, 
+    githubAnalytics, 
+    connectGithub, 
+    disconnectGithub, 
+    updateUserSkills, 
+    updateProfessionalLinks: updateLinksStore 
+  } = useAppStore();
 
   // Access the global theme state & setTheme so the user can pick directly
   const { theme, setTheme } = useTheme();
@@ -57,29 +73,22 @@ export default function SettingsPage() {
   const [linksLoading, setLinksLoading] = useState(false);
   const [linksSuccess, setLinksSuccess] = useState(false);
   const [linksError, setLinksError] = useState('');
+  
   useEffect(() => {
-
     async function loadLinks(){
+      try {
+        const data = await getProfessionalLinks();
+        if(!data) return;
 
-        try{
-
-            const data = await getProfessionalLinks();
-
-            if(!data) return;
-
-            setGithubUrl(data.githubUrl || "");
-            setLinkedinUrl(data.linkedinUrl || "");
-            setResumeUrl(data.resumeUrl || "");
-
-        }catch(err){
-            console.error(err);
-        }
-
+        setGithubUrl(data.githubUrl || "");
+        setLinkedinUrl(data.linkedinUrl || "");
+        setResumeUrl(data.resumeUrl || "");
+      } catch(err) {
+        console.error(err);
+      }
     }
-
     loadLinks();
-
-},[]);
+  }, []);
 
   // Portfolio Visibility States
   const [isPortfolioPublic, setIsPortfolioPublic] = useState(user?.portfolioPublic ?? false);
@@ -192,126 +201,108 @@ export default function SettingsPage() {
   const [notifyMentorReplied, setNotifyMentorReplied] = useState(true);
   const [notifyRecruiterScans, setNotifyRecruiterScans] = useState(false);
 
-  // Success toast helpers
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [resetSuccess, setResetSuccess] = useState(false);
-
   // --- AVATAR UPLOAD STATE HOOKS ---
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>((user as any)?.imageUrl || null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
-  const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
-
-  const isUploading = false; // Mocking uploading state for compatibility
+  const isUploading = false; 
 
   const handleSaveAvatar = async () => {
     if (!previewUrl) return;
+
     updateAvatar(previewUrl);
-    setAvatarSuccess("Avatar updated locally successfully!");
-    setAvatarFile(null);
+
+    try {
+      await updateProfileAvatar(previewUrl);
+      toast.success("Avatar updated successfully.");
+      setAvatarFile(null);
+    } catch {
+      toast.error("Failed to update avatar.");
+    }
   };
 
   const handleAvatarSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAvatarError(null);
-    setAvatarSuccess(null);
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate MIME formats
     const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedMimeTypes.includes(file.type)) {
-      setAvatarError("Format unsupported. Use JPG, JPEG, PNG, or WEBP.");
+      toast.error("Format unsupported. Use JPG, PNG or WEBP.");
       return;
     }
 
-    // Enforce 5MB limit
     if (file.size > 5 * 1024 * 1024) {
-      setAvatarError("Image file size exceeds the 5MB limit.");
+      toast.error("Image exceeds the 5MB limit.");
       return;
     }
 
     setAvatarFile(file);
 
-    // Create client memory string preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreviewUrl(reader.result as string);
     };
     reader.readAsDataURL(file);
   };
-  // ----------------------------------
 
   // Save profile information
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile(profileName, profileEmail, profileGoal);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 2000);
+    toast.success("Profile updated successfully.");
   };
 
   const validateUrl = (url: string) => {
     if (!url) return true;
-
     try {
-        new URL(url);
-        return true;
+      new URL(url);
+      return true;
     } catch {
-        return false;
+      return false;
     }
   };
 
   const handleSaveLinks = async () => {
-
     if (
-        !validateUrl(githubUrl) ||
-        !validateUrl(linkedinUrl) ||
-        !validateUrl(resumeUrl)
+      !validateUrl(githubUrl) ||
+      !validateUrl(linkedinUrl) ||
+      !validateUrl(resumeUrl)
     ) {
-        setLinksError("Please enter valid URLs.");
-        return;
+      setLinksError("Please enter valid URLs.");
+      return;
     }
 
     setLinksError("");
     setLinksLoading(true);
 
     try {
+      await updateProfessionalLinks({
+        githubUrl,
+        linkedinUrl,
+        resumeUrl,
+      });
 
-        await updateProfessionalLinks({
-            githubUrl,
-            linkedinUrl,
-            resumeUrl,
-        });
+      updateLinksStore(
+        githubUrl,
+        linkedinUrl,
+        resumeUrl
+      );
 
-        updateLinksStore(
-            githubUrl,
-            linkedinUrl,
-            resumeUrl
-        );
-
-        setLinksSuccess(true);
-
-        setTimeout(() => {
-            setLinksSuccess(false);
-        },2000);
-
+      setLinksSuccess(true);
+      setTimeout(() => {
+        setLinksSuccess(false);
+      }, 2000);
     } catch {
-
-        setLinksError("Failed to save links.");
-
+      setLinksError("Failed to save links.");
     } finally {
-
-        setLinksLoading(false);
-
+      setLinksLoading(false);
     }
-
   };
 
   // Reset Onboarding pathway
   const handleResetOnboarding = () => {
     resetOnboarding();
-    setResetSuccess(true);
-    setTimeout(() => setResetSuccess(false), 2000);
+    toast.success("Onboarding reset successfully.");
   };
 
   const [gitUsername, setGitUsername] = useState(githubAnalytics.username || '');
@@ -372,17 +363,30 @@ export default function SettingsPage() {
   // Toggle Git Connection
   const handleToggleGithub = async () => {
     if (githubAnalytics.connected) {
-      disconnectGithub();
-      setGitUsername('');
-    } else {
-      if (!gitUsername.trim()) return;
-      setGitLoading(true);
+      try {
+        disconnectGithub();
+        toast.success("GitHub disconnected.");
+        setGitUsername("");
+      } catch {
+        toast.error("Failed to disconnect GitHub.");
+      }
+      return;
+    }
+
+    if (!gitUsername.trim()) return;
+
+    setGitLoading(true);
+
+    try {
       await connectGithub(gitUsername.trim());
+      toast.success("GitHub connected successfully.");
+    } catch {
+      toast.error("Failed to connect GitHub.");
+    } finally {
       setGitLoading(false);
     }
   };
 
-  /** Theme option card definition */
   const themeOptions: { value: Theme; label: string; description: string; icon: React.ReactNode }[] = [
     {
       value: 'dark',
@@ -400,7 +404,6 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8 pb-12">
-      {/* Title Header */}
       <div>
         <h2
           className="text-2xl font-bold flex items-center space-x-2"
@@ -415,19 +418,13 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-        {/* Left Column: Form Settings (Appearance, Profile & Notification configs) */}
         <div className="lg:col-span-2 space-y-8">
-
-          {/* ─── PROFILE SETTINGS FORM ───────────────────────────────────── */}
           <Card hoverEffect={false}>
             <CardHeader>
               <CardTitle className="text-base font-bold">Profile Details</CardTitle>
               <CardDescription className="text-xs">Edit your public metadata and target career goals.</CardDescription>
             </CardHeader>
             <CardContent>
-
-              {/* DYNAMIC AVATAR UPLOAD COMPONENT */}
               <div className="p-4 bg-white/5 rounded-xl border border-white/5 flex flex-col sm:flex-row items-center gap-6 mb-6 text-xs sm:text-sm">
                 <div className="relative w-20 h-20 rounded-full border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden shrink-0 group">
                   {previewUrl ? (
@@ -497,19 +494,6 @@ export default function SettingsPage() {
                       </Button>
                     )}
                   </div>
-
-                  {avatarError && (
-                    <p className="text-[11px] text-rose-400 font-medium flex items-center mt-1">
-                      <AlertCircle className="w-3.5 h-3.5 mr-1" />
-                      {avatarError}
-                    </p>
-                  )}
-                  {avatarSuccess && (
-                    <p className="text-[11px] text-emerald-400 font-medium flex items-center mt-1">
-                      <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                      {avatarSuccess}
-                    </p>
-                  )}
                 </div>
               </div>
               
@@ -541,7 +525,6 @@ export default function SettingsPage() {
                   leftIcon={<UserIcon className="w-4.5 h-4.5" aria-hidden="true" />}
                 />
 
-                {/* ─── PUBLIC PORTFOLIO VISIBILITY SECTION ───────────────────────── */}
                 <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/20 space-y-3 mt-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -552,7 +535,6 @@ export default function SettingsPage() {
                       </Badge>
                     </div>
 
-                    {/* Toggle Switch */}
                     <button
                       type="button"
                       role="switch"
@@ -645,16 +627,6 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex items-center justify-between pt-4">
-                  {saveSuccess && (
-                    <span
-                      role="status"
-                      aria-live="polite"
-                      className="text-xs text-emerald-400 font-semibold flex items-center"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-1.5 animate-bounce" aria-hidden="true" />
-                      Changes saved successfully
-                    </span>
-                  )}
                   <Button
                     type="submit"
                     variant="premium"
@@ -667,7 +639,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* ─── SKILLS PORTFOLIO & AI EXTRACTION ───────────────────────── */}
           <Card hoverEffect={false}>
             <CardHeader>
               <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -681,8 +652,6 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-1">
-              
-              {/* Removable Skills Badges */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                   Active Technical Skills
@@ -711,7 +680,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Manual entry row */}
               <div className="flex items-center space-x-2">
                 <input
                   type="text"
@@ -736,7 +704,6 @@ export default function SettingsPage() {
                 </Button>
               </div>
 
-              {/* AI Resume Skill Extractor Container */}
               <div className="rounded-xl border border-indigo-500/20 bg-indigo-950/20 p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-1.5">
@@ -783,7 +750,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Save Trigger */}
               <div className="flex items-center justify-between pt-4 border-t border-white/5">
                 {skillsSaveSuccess && (
                   <span className="text-xs text-emerald-400 font-semibold flex items-center">
@@ -808,11 +774,9 @@ export default function SettingsPage() {
                   )}
                 </Button>
               </div>
-
             </CardContent>
           </Card>
 
-          {/* ─── PROFESSIONAL LINKS ──────────────────────────────────────── */}
           <Card hoverEffect={false}>
             <CardHeader>
               <CardTitle>Professional Links</CardTitle>
@@ -834,93 +798,6 @@ export default function SettingsPage() {
                 value={resumeUrl}
                 onChange={(e) => setResumeUrl(e.target.value)}
               />
-              {linksError && (
-                <p className="text-xs text-red-500">
-                  {linksError}
-                </p>
-              )}
-              {linksSuccess && (
-                <p className="text-xs text-green-500">
-                  Links updated successfully.
-                </p>
-              )}
-              <Button
-                onClick={handleSaveLinks}
-                disabled={linksLoading}
-                variant="premium"
-                className="mt-2"
-              >
-                {linksLoading ? "Saving..." : "Save Professional Links"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* ─── NOTIFICATION PREFERENCES ────────────────────────────────── */}
-          <Card hoverEffect={false}>
-            <CardHeader>
-              <CardTitle className="text-base font-bold">Notification Controls</CardTitle>
-              <CardDescription className="text-xs">Manage how and when you receive system alerts.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-1 text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
-              <div
-                className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
-                style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
-              >
-                <label htmlFor="notify-weekly-plan" className="space-y-1 cursor-pointer flex-1">
-                  <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>Weekly plan guides alerts</h4>
-                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    Receive automated email alerts summarizing checklist items for the week.
-                  </p>
-                </label>
-                <input
-                  id="notify-weekly-plan"
-                  type="checkbox"
-                  checked={notifyWeeklyPlan}
-                  onChange={() => setNotifyWeeklyPlan(!notifyWeeklyPlan)}
-                  aria-label="Weekly plan guides alerts"
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                />
-              </div>
-
-              <div
-                className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
-                style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
-              >
-                <label htmlFor="notify-mentor-replied" className="space-y-1 cursor-pointer flex-1">
-                  <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>AI Mentor replies stream alerts</h4>
-                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    Push notifications alert when AI mentor finishes vector parsing calculations.
-                  </p>
-                </label>
-                <input
-                  id="notify-mentor-replied"
-                  type="checkbox"
-                  checked={notifyMentorReplied}
-                  onChange={() => setNotifyMentorReplied(!notifyMentorReplied)}
-                  aria-label="AI Mentor replies stream alerts"
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                />
-              </div>
-
-              <div
-                className="flex items-start justify-between p-3.5 rounded-xl border gap-4"
-                style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
-              >
-                <label htmlFor="notify-recruiter-scans" className="space-y-1 cursor-pointer flex-1">
-                  <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>Recruiter search logs crawl alerts</h4>
-                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    Receive instant notifications when recruiters request access indices.
-                  </p>
-                </label>
-                <input
-                  id="notify-recruiter-scans"
-                  type="checkbox"
-                  checked={notifyRecruiterScans}
-                  onChange={() => setNotifyRecruiterScans(!notifyRecruiterScans)}
-                  aria-label="Recruiter search logs crawl alerts"
-                  className="w-5 h-5 accent-indigo-500 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                />
-              </div>
             </CardContent>
           </Card>
         </div>
@@ -928,7 +805,7 @@ export default function SettingsPage() {
         {/* Right Column: Connection accounts & Operations configs */}
         <div className="space-y-8">
 
-          {/* ─── CONNECTED ACCOUNTS ──────────────────────────────────────── */}
+          {/* ─── CONNECTED ACCOUNTS ───────────────────────── */}
           <Card hoverEffect={false}>
             <CardHeader>
               <CardTitle className="text-base font-bold">Connected Integrations</CardTitle>
@@ -1093,12 +970,6 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  {resetSuccess && (
-                    <span className="text-[10px] text-emerald-400 font-semibold flex items-center">
-                      <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                      Erased. Go to navbar CTAs.
-                    </span>
-                  )}
                   <Button
                     variant="outline"
                     size="sm"
