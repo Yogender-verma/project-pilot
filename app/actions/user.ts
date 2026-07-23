@@ -12,6 +12,19 @@ export interface OnboardingPayload {
   dailyStudyTime: number;
 }
 
+export interface UserContext {
+  name: string;
+  careerGoal: string;
+  skills: string[];
+}
+
+const normalizeSkills = (skills: unknown): string[] =>
+  Array.isArray(skills)
+    ? skills.filter((skill): skill is string => typeof skill === 'string').map((skill) => skill.trim()).filter(Boolean)
+    : typeof skills === 'string'
+      ? skills.split(',').map((skill) => skill.trim()).filter(Boolean)
+      : [];
+
 /**
  * Persists onboarding data to PostgreSQL.
  * Supports both real Clerk sessions and developer sandboxes.
@@ -97,7 +110,7 @@ export async function getCurrentUserProfile() {
   }
 
   try {
-    return await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { clerkId: userId },
       include: {
         projects: {
@@ -109,11 +122,57 @@ export async function getCurrentUserProfile() {
         }
       }
     });
+    return user
+      ? {
+          ...user,
+          name: user.fullName || 'User',
+          careerGoal: user.dreamRole || 'Software Developer',
+          skills: normalizeSkills(user.skills),
+        }
+      : null;
   } catch (error) {
     console.error('Failed to fetch user profile:', error);
     // Return null so callers can fall back to Clerk identity data.
     // Do NOT return a fake 'Dev User' object — that causes dummy data to appear on the dashboard.
     return null;
+  }
+}
+
+/**
+ * Returns the safe, normalized profile context used by the AI Mentor.
+ */
+export async function getUserContext(): Promise<UserContext> {
+  let userId: string | null = null;
+
+  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    const session = await auth();
+    userId = session.userId;
+  } else if (process.env.NODE_ENV === 'development') {
+    userId = 'mock-developer-id';
+  }
+
+  if (!userId) {
+    return { name: 'User', careerGoal: 'Software Developer', skills: [] };
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: {
+        fullName: true,
+        dreamRole: true,
+        skills: true,
+      },
+    });
+
+    return {
+      name: user?.fullName || 'User',
+      careerGoal: user?.dreamRole || 'Software Developer',
+      skills: normalizeSkills(user?.skills),
+    };
+  } catch (error) {
+    console.error('Failed to fetch AI Mentor user context:', error);
+    return { name: 'User', careerGoal: 'Software Developer', skills: [] };
   }
 }
 
