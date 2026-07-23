@@ -10,6 +10,7 @@ import { CommandPalette } from '@/components/dashboard/CommandPalette';
 import { MobileDrawer } from '@/components/layout/MobileDrawer';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useTheme } from '@/lib/ThemeProvider';
@@ -38,6 +39,9 @@ export default function DashboardLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [mounted, setMounted] = useState(false);
+  const [pageSearchQuery, setPageSearchQuery] = useState('');
+  const [hasNoMatches, setHasNoMatches] = useState(false);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -113,6 +117,105 @@ export default function DashboardLayout({
     };
     hydrateUser();
   }, [clerkLoaded, clerkUser, syncUserProfile]);
+
+  // Reset search query on pathname change
+  useEffect(() => {
+    setPageSearchQuery('');
+  }, [pathname]);
+
+  // Inject search highlight styling dynamically
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const styleId = 'search-highlight-styles';
+    let styleEl = document.getElementById(styleId);
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      styleEl.textContent = `
+        ::highlight(search-results) {
+          background-color: #a78bfa !important;
+          color: #000000 !important;
+        }
+        [data-theme="light"] ::highlight(search-results) {
+          background-color: #6366f1 !important;
+          color: #ffffff !important;
+        }
+      `;
+      document.head.appendChild(styleEl);
+    }
+  }, []);
+
+  // Live page search highlight logic using CSS Custom Highlight API
+  useEffect(() => {
+    if (typeof CSS === 'undefined' || !CSS.highlights) {
+      return;
+    }
+
+    if (!pageSearchQuery.trim()) {
+      CSS.highlights.delete('search-results');
+      setHasNoMatches(false);
+      return;
+    }
+
+    const handleSearch = () => {
+      const container = document.getElementById('dashboard-content-area');
+      if (!container) return;
+
+      const textNodes: Node[] = [];
+      const walk = (node: Node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          if (node.nodeValue?.trim()) textNodes.push(node);
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          const el = node as Element;
+          const tagName = el.tagName?.toLowerCase();
+          if (el.id === 'search-empty-state') return;
+          if (['script', 'style', 'noscript', 'iframe', 'input', 'textarea', 'select', 'code'].includes(tagName || '')) return;
+          
+          try {
+            const style = window.getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return;
+          } catch (e) {}
+
+          for (let i = 0; i < node.childNodes.length; i++) walk(node.childNodes[i]);
+        } else {
+          for (let i = 0; i < node.childNodes.length; i++) walk(node.childNodes[i]);
+        }
+      };
+      walk(container);
+
+      const ranges: Range[] = [];
+      const normalizedQuery = pageSearchQuery.toLowerCase();
+
+      for (const node of textNodes) {
+        const text = node.nodeValue?.toLowerCase() || '';
+        let index = text.indexOf(normalizedQuery);
+        while (index !== -1) {
+          try {
+            const range = new Range();
+            range.setStart(node, index);
+            range.setEnd(node, index + pageSearchQuery.length);
+            ranges.push(range);
+          } catch (e) {}
+          index = text.indexOf(normalizedQuery, index + pageSearchQuery.length);
+        }
+      }
+
+      if (ranges.length > 0) {
+        const highlight = new Highlight(...ranges);
+        CSS.highlights.set('search-results', highlight);
+        setHasNoMatches(false);
+      } else {
+        CSS.highlights.delete('search-results');
+        setHasNoMatches(true);
+      }
+    };
+
+    const timeoutId = setTimeout(handleSearch, 50);
+    return () => {
+      clearTimeout(timeoutId);
+      CSS.highlights.delete('search-results');
+    };
+  }, [pageSearchQuery]);
 
   // Derive page name from route path
   const getPageTitle = () => {
@@ -255,6 +358,37 @@ export default function DashboardLayout({
 
             {/* Top Actions: Search, Theme, Notify, Profile */}
             <div className='flex items-center space-x-4'>
+              {/* Functional page live search */}
+              <div
+                className="hidden sm:flex items-center gap-3 h-11 min-w-60 lg:min-w-64 px-4 rounded-2xl border transition-all shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500/80"
+                style={{
+                  borderColor: 'var(--border-subtle)',
+                  backgroundColor: 'var(--hover-bg)',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                <Search className="w-4 h-4 text-indigo-400 shrink-0" aria-hidden="true" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Find on page..."
+                  value={pageSearchQuery}
+                  onChange={(e) => setPageSearchQuery(e.target.value)}
+                  className="bg-transparent border-none outline-none text-xs text-[var(--text-primary)] w-full placeholder:text-slate-500 py-2"
+                  aria-label="Search page content"
+                />
+                {pageSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setPageSearchQuery('')}
+                    className="rounded-lg p-1 text-slate-400 hover:text-white transition hover:bg-white/5 cursor-pointer"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
               {/* Functional global command search */}
               <button
                 type='button'
@@ -328,14 +462,29 @@ export default function DashboardLayout({
         )}
 
         {/* Main Dashboard Pages Slot (Children content) */}
-        <div className={isReadingMode ? "flex-1 w-full relative z-10" : "flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto relative z-10"}>
+        <div 
+          id="dashboard-content-area"
+          className={isReadingMode ? "flex-1 w-full relative z-10" : "flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto relative z-10"}
+        >
           <CommandPalette
             open={commandPaletteOpen}
             onOpenChange={setCommandPaletteOpen}
             projects={projects}
             onProjectSelect={selectProject}
           />
-          {children}
+          {hasNoMatches ? (
+            <div id="search-empty-state">
+              <EmptyState
+                title="No results found"
+                description={`We couldn't find any matches for "${pageSearchQuery}" on this page.`}
+                icon={<Search className="h-10 w-10 text-indigo-400" />}
+                ctaLabel="Clear Search"
+                onClick={() => setPageSearchQuery('')}
+              />
+            </div>
+          ) : (
+            children
+          )}
         </div>
       </div>
     </div>
