@@ -1,19 +1,72 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText } from 'ai';
 import { auth } from '@clerk/nextjs/server';
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
+// GET: Fetch previous conversation history for session restoration
+export async function GET(req: Request) {
+  try {
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ messages: [] });
+    }
+
+    const messages = await prisma.aiMessage.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'asc' },
+      select: { role: true, content: true },
+    });
+
+    return NextResponse.json({ messages });
+  } catch (error) {
+    console.error('Error fetching chat history:', error);
+    return NextResponse.json({ error: 'Failed to fetch history' }, { status: 500 });
+  }
+}
+
+// POST: Handle chat streaming, context injection, and database persistence
 export async function POST(req: Request) {
   try {
+    const { userId: clerkId } = await auth();
     const { messages, userContext, isRoastMode } = await req.json();
+
+    let dbUserId: string | null = null;
+    if (clerkId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { clerkId },
+        select: { id: true },
+      });
+      dbUserId = dbUser?.id || null;
+    }
+
+    // Save the latest user message to the database asynchronously
+    const latestUserMessage = messages[messages.length - 1];
+    if (dbUserId && latestUserMessage && latestUserMessage.role === 'user') {
+      await prisma.aiMessage.create({
+        data: {
+          userId: dbUserId,
+          role: 'user',
+          content: latestUserMessage.content,
+        },
+      }).catch((err) => console.error('Failed to save user message:', err));
+    }
 
     // Resilient simulated streaming fallback mode when API key is unconfigured
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-      const lastMessage = messages[messages.length - 1]?.content || 'Hello';
+      const lastMessage = latestUserMessage?.content || 'Hello';
       
       let mockText = '';
       if (isRoastMode) {
@@ -35,6 +88,17 @@ Here are the modern best practices to implement this architecture:
 3. **Database Syncing**: Always execute server-side database sync asynchronously or inside transitions.
 
 Let me know if you would like a code snippet or a step-by-step roadmap for this feature!`;
+      }
+
+      // Save mock assistant response to database if user is authenticated
+      if (dbUserId) {
+        await prisma.aiMessage.create({
+          data: {
+            userId: dbUserId,
+            role: 'assistant',
+            content: mockText,
+          },
+        }).catch((err) => console.error('Failed to save assistant mock message:', err));
       }
 
       const textEncoder = new TextEncoder();
@@ -95,6 +159,18 @@ Format your response so that the roast section stands out (e.g. starting with "ð
       model: google('gemini-flash-lite-latest'),
       system: systemPrompt,
       messages: validMessages,
+      onFinish: async ({ text }) => {
+        // Save the generated AI response to the database asynchronously upon completion
+        if (dbUserId && text) {
+          await prisma.aiMessage.create({
+            data: {
+              userId: dbUserId,
+              role: 'assistant',
+              content: text,
+            },
+          }).catch((err) => console.error('Failed to save assistant response:', err));
+        }
+      },
     });
 
     console.log('Sending text stream response...');
@@ -105,5 +181,33 @@ Format your response so that the roast section stands out (e.g. starting with "ð
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+}
+
+// DELETE: Clear chat history from the database
+export async function DELETE(req: Request) {
+  try {
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ success: true });
+    }
+
+    await prisma.aiMessage.deleteMany({
+      where: { userId: user.id },
+    });
+
+    return NextResponse.json({ success: true, message: 'Chat history cleared' });
+  } catch (error) {
+    console.error('Error clearing chat history:', error);
+    return NextResponse.json({ error: 'Failed to clear history' }, { status: 500 });
   }
 }
