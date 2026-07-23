@@ -23,18 +23,6 @@ import {
   X
 } from 'lucide-react';
 
-declare global {
-  class Highlight {
-    constructor(...ranges: Range[]);
-  }
-  interface CSS {
-    highlights: {
-      set(name: string, highlight: Highlight): void;
-      delete(name: string): void;
-    };
-  }
-}
-
 export default function DashboardLayout({
   children,
 }: {
