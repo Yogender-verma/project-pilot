@@ -19,9 +19,13 @@ import {
   X,
   Maximize2,
   Minimize2,
-  Flame
+  Flame,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { useSpeechRecognition } from '@/lib/useSpeechRecognition';
+import { notify } from '@/lib/toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -48,6 +52,29 @@ export default function AiMentorChatPage() {
   const [attachment, setAttachment] = useState<{ name: string; size: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Voice input via Web Speech API
+  const {
+    isListening,
+    isSupported: speechSupported,
+    start: startListening,
+    stop: stopListening,
+  } = useSpeechRecognition({
+    onResult: (text, isFinal) => {
+      setInputMessage((prev) => {
+        const base = prev.trimEnd();
+        if (isFinal) {
+          // On final result, append with a space separator if needed
+          return base ? `${base} ${text}` : text;
+        }
+        // During interim results, show the live transcription
+        return text;
+      });
+    },
+    onError: (msg) => {
+      notify.error(msg);
+    },
+  });
 
   // Retrieve active conversation
   const activeConv = conversations.find((c) => c.id === activeConversationId) || conversations[0];
@@ -549,7 +576,7 @@ export default function AiMentorChatPage() {
               onKeyDown={handleKeyDown}
               aria-label="Ask AI Mentor for architectural guidelines"
               rows={2}
-              className="w-full text-xs sm:text-sm rounded-2xl border p-4 pr-32 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 resize-none glass-panel"
+              className="w-full text-xs sm:text-sm rounded-2xl border p-4 pr-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 resize-none glass-panel"
               style={{
                 backgroundColor: 'var(--input-bg)',
                 borderColor: 'var(--input-border)',
@@ -557,7 +584,7 @@ export default function AiMentorChatPage() {
               }}
             />
             
-            {/* Input Action tools (File attach & Send button) */}
+            {/* Input Action tools (File attach, Mic, & Send button) */}
             <div className="absolute right-4.5 bottom-4 flex items-center space-x-2">
               <button
                 type="button"
@@ -568,6 +595,33 @@ export default function AiMentorChatPage() {
               >
                 <Paperclip className="w-4 h-4" aria-hidden="true" />
               </button>
+
+              {speechSupported && (
+                <button
+                  type="button"
+                  onClick={isListening ? stopListening : startListening}
+                  aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                  title={isListening ? 'Stop listening' : 'Speak your message'}
+                  className={`relative p-2 rounded-xl border transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    isListening
+                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+                      : 'border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  {isListening ? (
+                    <MicOff className="w-4 h-4" aria-hidden="true" />
+                  ) : (
+                    <Mic className="w-4 h-4" aria-hidden="true" />
+                  )}
+                  {isListening && (
+                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+                    </span>
+                  )}
+                </button>
+              )}
+
               <Button
                 type="button"
                 variant="premium"
@@ -581,6 +635,17 @@ export default function AiMentorChatPage() {
                 Send
               </Button>
             </div>
+
+            {/* Voice input listening indicator */}
+            {isListening && (
+              <div className="flex items-center space-x-2 mt-2 text-[11px] text-rose-400 font-medium">
+                <span className="flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                </span>
+                <span>Listening... Speak now</span>
+              </div>
+            )}
           </div>
         </div>
 
