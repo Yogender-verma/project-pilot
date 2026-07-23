@@ -1,23 +1,38 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as zod from 'zod';
-import { motion } from 'framer-motion';
-import { Compass, Mail, Lock, ArrowRight, ShieldCheck, Compass as CompassIcon, Eye, EyeOff } from 'lucide-react';
-import { Github, Chrome } from '@/components/ui/BrandIcons';
-import { useAppStore } from '@/store/useAppStore';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
-import { useSignIn } from '@clerk/nextjs';
+import { Chrome, Github } from "@/components/ui/BrandIcons";
+import { Button } from "@/components/ui/Button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { useAppStore } from "@/store/useAppStore";
+import { useSignIn } from "@clerk/nextjs";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  Compass as CompassIcon,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  ShieldCheck,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import * as zod from "zod";
 
 const loginSchema = zod.object({
-  email: zod.string().email('Please enter a valid email address'),
-  password: zod.string().min(6, 'Password must be at least 6 characters')
+  email: zod.string().email("Please enter a valid email address"),
+  password: zod.string().min(6, "Password must be at least 6 characters"),
 });
 
 type LoginFormValues = zod.infer<typeof loginSchema>;
@@ -33,31 +48,34 @@ export default function LoginPage() {
     if (!isSignInLoaded) return;
     try {
       await signIn.authenticateWithRedirect({
-        strategy: 'oauth_google',
-        redirectUrl: '/auth-callback',
-        redirectUrlComplete: '/auth-callback',
+        strategy: "oauth_google",
+        redirectUrl: "/auth-callback",
+        redirectUrlComplete: "/auth-callback",
       });
     } catch (err) {
-      console.error('Google Sign In Error:', err);
+      console.error("Google Sign In Error:", err);
     }
   };
 
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: ''
-    }
+      email: "",
+      password: "",
+    },
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    if (data.email === 'yogendarverma0268@gmail.com' && data.password === '123456789') {
-      login(data.email, 'yogender verma');
-      router.push('/dashboard');
+    if (
+      data.email === "yogendarverma0268@gmail.com" &&
+      data.password === "123456789"
+    ) {
+      login(data.email, "yogender verma");
+      router.push("/dashboard");
       return;
     }
 
@@ -69,16 +87,18 @@ export default function LoginPage() {
         password: data.password,
       });
 
-      if (result.status === 'complete') {
+      if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        router.push('/auth-callback');
+        router.push("/auth-callback");
       } else {
-        console.error('Sign-in status incomplete:', result);
-        alert('Authentication is incomplete. Please check your credentials.');
+        console.error("Sign-in status incomplete:", result);
+        toast.warning(
+          "Authentication is incomplete. Please check your credentials.",
+        );
       }
     } catch (err: any) {
-      console.error('Sign-in error:', err);
-      alert(err.errors?.[0]?.message || 'Invalid email or password.');
+      console.error("Sign-in error:", err);
+      toast.error(err.errors?.[0]?.message || "Invalid email or password.");
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +127,7 @@ export default function LoginPage() {
         </Link>
 
         {/* Dynamic Graphic Widget */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
@@ -121,7 +141,9 @@ export default function LoginPage() {
             Stop Guessing. Build Projects That Actually Work.
           </h2>
           <p className="text-sm text-slate-400 leading-relaxed mb-6">
-            ProjectPilot matches actual career role descriptions directly with resume bullet builders to automatically inject skills gaps into beautiful microservice applications.
+            ProjectPilot matches actual career role descriptions directly with
+            resume bullet builders to automatically inject skills gaps into
+            beautiful microservice applications.
           </p>
 
           <div className="flex items-center justify-between text-xs font-semibold text-slate-300 bg-white/5 p-3 rounded-xl border border-white/5">
@@ -150,29 +172,35 @@ export default function LoginPage() {
             <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400">
               <CompassIcon className="w-5 h-5" />
             </div>
-            <span className="text-lg font-bold tracking-wider text-white">ProjectPilot AI</span>
+            <span className="text-lg font-bold tracking-wider text-white">
+              ProjectPilot AI
+            </span>
           </div>
 
           <Card className="bg-[#08051e]/40 p-2 md:p-4">
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-extrabold text-white">Welcome back</CardTitle>
-              <CardDescription>Enter your credentials to enter the cockpit</CardDescription>
+              <CardTitle className="text-2xl font-extrabold text-white">
+                Welcome back
+              </CardTitle>
+              <CardDescription>
+                Enter your credentials to enter the cockpit
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {/* Oauth Buttons */}
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <Button 
-                  variant="glass" 
-                  size="sm" 
+                <Button
+                  variant="glass"
+                  size="sm"
                   className="w-full h-11 flex items-center justify-center space-x-2 text-xs"
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.push("/dashboard")}
                 >
                   <Github className="w-4 h-4 text-white" />
                   <span>GitHub</span>
                 </Button>
-                <Button 
-                  variant="glass" 
-                  size="sm" 
+                <Button
+                  variant="glass"
+                  size="sm"
                   className="w-full h-11 flex items-center justify-center space-x-2 text-xs"
                   onClick={handleGoogleSignIn}
                 >
@@ -192,21 +220,21 @@ export default function LoginPage() {
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <Input
-                  {...register('email')}
+                  {...register("email")}
                   type="email"
                   label="Email Address"
                   placeholder="name@domain.com"
                   error={errors.email?.message}
                   leftIcon={<Mail className="w-4 h-4" />}
                 />
-                
+
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
                     {/* Input will handle standard labels, we can append a custom link below */}
                   </div>
                   <Input
-                    {...register('password')}
-                    type={showPassword ? 'text' : 'password'}
+                    {...register("password")}
+                    type={showPassword ? "text" : "password"}
                     label="Password"
                     placeholder="••••••••"
                     error={errors.password?.message}
@@ -216,7 +244,9 @@ export default function LoginPage() {
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="text-slate-400 hover:text-slate-200 focus:outline-none transition-colors p-1"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                       >
                         {showPassword ? (
                           <EyeOff className="w-4 h-4" />
@@ -227,7 +257,12 @@ export default function LoginPage() {
                     }
                   />
                   <div className="text-right mt-1">
-                    <a href="#" className="text-xs text-indigo-400 hover:underline">Forgot password?</a>
+                    <a
+                      href="#"
+                      className="text-xs text-indigo-400 hover:underline"
+                    >
+                      Forgot password?
+                    </a>
                   </div>
                 </div>
 
@@ -243,8 +278,11 @@ export default function LoginPage() {
               </form>
 
               <div className="text-center mt-6 text-xs text-slate-400">
-                Don&apos;t have an account?{' '}
-                <Link href="/signup" className="text-indigo-400 font-semibold hover:underline">
+                Don&apos;t have an account?{" "}
+                <Link
+                  href="/signup"
+                  className="text-indigo-400 font-semibold hover:underline"
+                >
                   Sign up for free
                 </Link>
               </div>

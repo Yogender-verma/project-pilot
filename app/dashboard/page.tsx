@@ -31,26 +31,26 @@ import {
   FileText,
   GitMerge,
   Info,
-  Sparkles
-} from 'lucide-react';
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
-import React from 'react';
+  Sparkles,
+} from "lucide-react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import React from "react";
 
 const SkillRadarChart = dynamic(
-  () => import('@/components/charts/SkillRadarChart'),
+  () => import("@/components/charts/SkillRadarChart"),
   {
     ssr: false,
     loading: () => <RadarChartSkeleton />,
-  }
+  },
 );
 
 const CommitBarChart = dynamic(
-  () => import('@/components/charts/CommitBarChart'),
+  () => import("@/components/charts/CommitBarChart"),
   {
     ssr: false,
     loading: () => <BarChartSkeleton />,
-  }
+  },
 );
 
 export default function MainDashboardPage() {
