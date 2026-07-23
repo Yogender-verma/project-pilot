@@ -23,7 +23,8 @@ import {
   Layers,
   ChevronRight,
   Sun,
-  Moon
+  Moon,
+  Printer
 } from 'lucide-react';
 import { Github, Linkedin } from '@/components/ui/BrandIcons';
 import { useAppStore } from '@/store/useAppStore';
@@ -65,14 +66,12 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
     loadPortfolio();
   }, [rawUsername]);
 
-  // Fallback to active Zustand store user if matching handle or demo mode
   const cleanParam = rawUsername.toLowerCase().replace(/[^a-z0-9-]/g, '-');
   const storeUsername = (storeUser?.username || storeUser?.name?.toLowerCase().replace(/\s+/g, '-') || 'yogender-verma').toLowerCase();
   
   const isMatchStore = storeUser && storeUser.portfolioPublic && (cleanParam === storeUsername || rawUsername === storeUser.id);
   const effectiveUser = dbProfile || (isMatchStore ? storeUser : null);
 
-  // If no portfolio or disabled public access
   const isPublicAllowed = dbProfile ? true : isMatchStore;
 
   const handleCopyLink = () => {
@@ -98,6 +97,17 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
     }
   };
 
+  const handleExportPDF = () => {
+    if (typeof window !== 'undefined') {
+      const originalTitle = document.title;
+      document.title = `${rawUsername}_projectpilot_resume`;
+      window.print();
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 1000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#070514] text-slate-300">
@@ -109,7 +119,6 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
     );
   }
 
-  // ─── PRIVATE OR NOT FOUND LOCK SCREEN ─────────────────────────────────
   if (!isPublicAllowed) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#070514] text-slate-200">
@@ -137,7 +146,6 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
     );
   }
 
-  // User details
   const name = dbProfile?.fullName || storeUser?.name || 'Yogender Verma';
   const avatarUrl = dbProfile?.imageUrl || storeUser?.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80';
   const careerGoal = dbProfile?.dreamRole || storeUser?.careerGoal || 'AI Engineer';
@@ -145,8 +153,42 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
   const userProjects = dbProfile?.projects || projects || [];
 
   return (
-    <div className="min-h-screen bg-[#070514] text-slate-100 selection:bg-indigo-500 selection:text-white">
-      {/* Top Glassmorphic Navigation Bar */}
+    <div className="min-h-screen bg-[#070514] text-slate-100 selection:bg-indigo-500 selection:text-white print:bg-white print:text-slate-900">
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: A4;
+            margin: 15mm;
+          }
+          header, .no-print, button {
+            display: none !important;
+          }
+          body, .min-h-screen {
+            background-color: #ffffff !important;
+            color: #1e293b !important;
+          }
+          section {
+            break-inside: avoid;
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+            color: #1e293b !important;
+            margin-bottom: 1rem;
+            padding: 1rem !important;
+          }
+          h1, h2, h3, p, span {
+            color: #0f172a !important;
+          }
+          .text-slate-300, .text-slate-400, .text-slate-500 {
+            color: #475569 !important;
+          }
+          .bg-white\/5, .bg-indigo-950\/40 {
+            background-color: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+          }
+        }
+      `}</style>
+
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070514]/80 border-b border-white/10 px-4 sm:px-8 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center space-x-2">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
@@ -159,9 +201,19 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
         </Link>
 
         <div className="flex items-center space-x-3">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleExportPDF}
+            className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm flex items-center gap-1.5"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            Export to PDF
+          </Button>
+
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white transition"
+            className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white transition no-print"
             title="Toggle theme"
           >
             {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
@@ -171,7 +223,7 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
             variant="outline"
             size="sm"
             onClick={handleCopyLink}
-            className="h-8 text-xs border-white/10 text-slate-200 hover:text-white"
+            className="h-8 text-xs border-white/10 text-slate-200 hover:text-white no-print"
           >
             {copiedLink ? <Check className="w-3.5 h-3.5 mr-1 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
             {copiedLink ? 'Copied' : 'Share'}
@@ -179,9 +231,7 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
         </div>
       </header>
 
-      {/* Main Container */}
       <main className="max-w-6xl mx-auto px-4 sm:px-8 py-10 space-y-10">
-        {/* ─── HERO PROFILE SECTION ────────────────────────────────────────── */}
         <section className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 via-white/5 to-transparent p-6 sm:p-10 backdrop-blur-2xl shadow-2xl overflow-hidden">
           <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -217,8 +267,7 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
                 Building scalable web applications, agentic AI systems, and interactive developer tools. Currently showcasing blueprints, GitHub statistics, and technical skill metrics on ProjectPilot.
               </p>
 
-              {/* Socials & Share Links */}
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2 no-print">
                 {githubAnalytics?.connected && (
                   <a
                     href={`https://github.com/${githubAnalytics.username}`}
@@ -250,7 +299,6 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
               </div>
             </div>
 
-            {/* Career Score Badge Box */}
             <div className="p-4 rounded-2xl border border-indigo-500/30 bg-indigo-950/40 backdrop-blur-xl text-center shrink-0 w-full sm:w-44 space-y-2">
               <span className="text-[10px] font-bold tracking-wider uppercase text-indigo-300">Career Score</span>
               <div className="text-3xl font-black text-white flex items-center justify-center gap-1">
@@ -268,7 +316,6 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
           </div>
         </section>
 
-        {/* ─── SKILLS OVERVIEW ────────────────────────────────────────────── */}
         <section className="space-y-4">
           <div className="flex items-center space-x-2">
             <Code2 className="w-5 h-5 text-indigo-400" />
@@ -288,7 +335,6 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
           </div>
         </section>
 
-        {/* ─── FEATURED PROJECTS GRID ─────────────────────────────────────── */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -300,7 +346,7 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {userProjects.map((project: any) => (
-              <Card key={project.id} hoverEffect className="border-white/10 bg-white/5 flex flex-col justify-between">
+              <Card key={project.id} hoverEffect className="border-white/10 bg-white/5 flex flex-col justify-between break-inside-avoid">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-base font-bold text-white">{project.title}</CardTitle>
@@ -317,7 +363,6 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
                 </CardHeader>
 
                 <CardContent className="space-y-4 pt-0">
-                  {/* Technologies */}
                   <div className="flex flex-wrap gap-1.5">
                     {(project.technologies || project.tags || ['React', 'Next.js', 'TypeScript']).map((tech: string, tIdx: number) => (
                       <span
@@ -329,7 +374,6 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
                     ))}
                   </div>
 
-                  {/* Progress Bar */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="text-slate-400">Roadmap Progress</span>
@@ -348,7 +392,6 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
           </div>
         </section>
 
-        {/* ─── GITHUB STATS & INTELLIGENCE ────────────────────────────────── */}
         {githubAnalytics?.connected && (
           <section className="space-y-4">
             <div className="flex items-center space-x-2">
@@ -378,8 +421,7 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-8 text-center text-xs text-slate-500">
+      <footer className="border-t border-white/10 py-8 text-center text-xs text-slate-500 no-print">
         <p>Powered by <strong className="text-slate-400">ProjectPilot</strong> — Shareable Developer Portfolios</p>
       </footer>
     </div>
