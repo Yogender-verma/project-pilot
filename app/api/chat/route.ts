@@ -1,20 +1,13 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText } from 'ai';
-import { auth } from '@clerk/nextjs/server';
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-      const {
-              messages,
-              userContext,
-              isRoastMode,
-              isMockInterview,
-              endInterview, } = await req.json();
+    const { messages, userContext, isRoastMode, isMockInterview, endInterview } = await req.json();
+
     // Resilient simulated streaming fallback mode when API key is unconfigured
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
       const lastMessage = messages[messages.length - 1]?.content || 'Hello';
@@ -54,7 +47,7 @@ Let me know if you would like a code snippet or a step-by-step roadmap for this 
           const words = mockText.split(' ');
           for (const word of words) {
             controller.enqueue(textEncoder.encode(word + ' '));
-            await new Promise((resolve) => setTimeout(resolve, 60)); // Simulated streaming speed
+            await new Promise((resolve) => setTimeout(resolve, 40));
           }
           controller.close();
         },
@@ -81,8 +74,8 @@ Context about the user:
 Do NOT use markdown headers unnecessarily. Use bolding and code blocks where helpful. 
 Respond directly to the user's latest query based on the conversation history.`;
 
-   if (isRoastMode) {
-  systemPrompt = `You are a sarcastic, witty, and slightly cynical Senior Software Engineer.
+    if (isRoastMode) {
+      systemPrompt = `You are a sarcastic, witty, and slightly cynical Senior Software Engineer.
 When the user pastes code or asks a question, playfully and humorously roast their code quality, naming conventions, inefficiencies, or logic flaws.
 Make the roast funny and entertaining, but never genuinely mean.
 AFTER the roast, shift gears and provide the actual technically optimized, corrected solution with clear explanations.
@@ -93,8 +86,8 @@ Context about the user:
 - Skills: ${(userContext?.skills || []).join(', ') || 'Beginner'}
 
 Format your response so that the roast section stands out (e.g. starting with "🔥 ROAST:" or "💻 THE CRITIQUE:"), followed by the constructive "🛠️ THE FIX" section containing the correct solution and code blocks.`;
-} else if (isMockInterview) {
-  systemPrompt = `You are an experienced Senior Software Engineering Hiring Manager conducting a technical interview.
+    } else if (isMockInterview) {
+      systemPrompt = `You are an experienced Senior Software Engineering Hiring Manager conducting a technical interview.
 
 Candidate Profile:
 - Name: ${userContext?.name || 'User'}
@@ -102,7 +95,6 @@ Candidate Profile:
 - Skills: ${(userContext?.skills || []).join(', ') || 'Beginner'}
 
 Interview Rules:
-
 1. Stay in the role of a professional hiring manager.
 2. Ask EXACTLY ONE technical interview question at a time.
 3. Wait for the candidate's response before asking another question.
@@ -120,33 +112,27 @@ Interview Rules:
 
 ${
   endInterview
-    ? `
-The candidate has ended the interview.
-
+    ? `The candidate has ended the interview.
 DO NOT ask another question or provide per-question feedback.
-
 Instead provide a final report using these exact headings, each with a concise value:
-
 Overall Score: X/10
 Strengths:
 Weaknesses:
 Topics to Improve:
-Hiring Recommendation:
-`
+Hiring Recommendation:`
     : ""
-}
-`;
-}
+}`;
+    }
 
     // Gemini strictly requires the first message to be from the user.
-    // We strip out any leading assistant messages from the conversation history.
     const validMessages = [...messages];
     while (validMessages.length > 0 && validMessages[0].role === 'assistant') {
       validMessages.shift();
     }
 
+    // Use streamText and return a text stream response
     const result = await streamText({
-      model: google('gemini-flash-lite-latest'),
+      model: google('gemini-1.5-flash'),
       system: systemPrompt,
       messages: validMessages,
     });
@@ -154,11 +140,14 @@ Hiring Recommendation:
     return result.toTextStreamResponse();
   } catch (error) {
     console.error('Error in /api/chat:', error);
-    return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : 'Failed to generate response'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : 'Failed to generate response',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 }
