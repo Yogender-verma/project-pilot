@@ -3,8 +3,8 @@
 import React, { use, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { CustomCursor } from '@/components/ui/CustomCursor';import {
+import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';import { CustomCursor } from '@/components/ui/CustomCursor';import {
   User as UserIcon,
   Globe,
   Award,
@@ -46,8 +46,8 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
 
   const [loading, setLoading] = useState(true);
   const [dbProfile, setDbProfile] = useState<any>(null);
-  const [copiedLink, setCopiedLink] = useState(false);
-
+const [copiedKeywordIdx, setCopiedKeywordIdx] = useState<number | null>(null);
+  const hasCelebratedRef = React.useRef(false);
   useEffect(() => {
     async function loadPortfolio() {
       setLoading(true);
