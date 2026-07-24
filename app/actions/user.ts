@@ -412,3 +412,61 @@ export async function getProfessionalLinks() {
     return null;
   }
 }
+
+/**
+ * Soft-deletes the current user's account by flagging it with a deletedAt
+ * timestamp instead of removing the row. Recoverable for 30 days.
+ */
+export async function softDeleteAccount() {
+  let userId: string | null = null;
+
+  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    const session = await auth();
+    userId = session.userId;
+  } else if (process.env.NODE_ENV === "development") {
+    userId = "mock-developer-id";
+  }
+
+  if (!userId) {
+    throw new Error("Unauthenticated user attempt to delete account.");
+  }
+
+  try {
+    return await prisma.user.update({
+      where: { clerkId: userId },
+      data: { deletedAt: new Date() },
+    });
+  } catch (error) {
+    console.error("Failed to soft-delete account:", error);
+    throw error;
+  }
+}
+
+/**
+ * Restores a soft-deleted account by clearing the deletedAt flag.
+ * Called when a user logs back in within the 30-day recovery window.
+ */
+export async function restoreAccount() {
+  let userId: string | null = null;
+
+  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    const session = await auth();
+    userId = session.userId;
+  } else if (process.env.NODE_ENV === "development") {
+    userId = "mock-developer-id";
+  }
+
+  if (!userId) {
+    throw new Error("Unauthenticated user attempt to restore account.");
+  }
+
+  try {
+    return await prisma.user.update({
+      where: { clerkId: userId },
+      data: { deletedAt: null },
+    });
+  } catch (error) {
+    console.error("Failed to restore account:", error);
+    throw error;
+  }
+}

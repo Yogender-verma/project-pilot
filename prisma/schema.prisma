@@ -20,9 +20,9 @@ model User {
   resumeUrl           String?
   dailyStudyTime      Int?
   onboardingCompleted Boolean        @default(false)
-  portfolioPublic     Boolean        @default(false)
-  projects            Project[]
-  notifications       Notification[]
+portfolioPublic     Boolean        @default(false)
+  deletedAt           DateTime?
+  projects            Project[]  notifications       Notification[]
   activities          Activity[]
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
