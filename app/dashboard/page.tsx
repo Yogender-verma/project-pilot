@@ -220,7 +220,7 @@ export default function MainDashboardPage() {
   const highPriorityGaps = careerScore.missingSkills.filter(
     (s) => s.importance === "High",
   );
-  const activeRecommendedProject = projects[0]; // OmniAI Agentic Dashboard
+  const activeRecommendedProject = projects[0];
 
   return (
     <div className="space-y-8 pb-12">
@@ -474,9 +474,9 @@ export default function MainDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recommended Project Blueprint */}
         {(() => {
-          const themeColor = activeRecommendedProject.difficulty === 'Advanced' 
+          const themeColor = activeRecommendedProject?.difficulty === 'Advanced' 
             ? '#ec4899' 
-            : activeRecommendedProject.difficulty === 'Intermediate' 
+            : activeRecommendedProject?.difficulty === 'Intermediate' 
               ? '#8b5cf6' 
               : '#10b981';
 
@@ -499,15 +499,15 @@ export default function MainDashboardPage() {
                       <Cpu className="w-4 h-4" />
                       <span className="text-[10px] font-bold uppercase tracking-wider font-mono">Primary Match Blueprint</span>
                     </div>
-                    <CardTitle className="text-lg font-bold">{activeRecommendedProject.title}</CardTitle>
-                    <CardDescription className="text-xs">{activeRecommendedProject.tagline}</CardDescription>
+                    <CardTitle className="text-lg font-bold">{activeRecommendedProject?.title}</CardTitle>
+                    <CardDescription className="text-xs">{activeRecommendedProject?.tagline}</CardDescription>
                   </div>
                   <Badge variant="glow">★ Impact: +45% Score</Badge>
                 </CardHeader>
                 <CardContent className="text-xs sm:text-sm space-y-4 pt-1 flex-1" style={{ color: 'var(--text-secondary)' }}>
-                  <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{activeRecommendedProject.description}</p>
+                  <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{activeRecommendedProject?.description}</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {activeRecommendedProject.technologies.slice(0, 5).map(tech => (
+                    {activeRecommendedProject?.technologies?.slice(0, 5).map(tech => (
                       <span key={tech} className="px-2 py-0.5 rounded-md text-[10px] font-mono border border-indigo-500/10 bg-indigo-500/5 text-indigo-300 font-semibold">
                         {tech}
                       </span>
@@ -517,7 +517,7 @@ export default function MainDashboardPage() {
                   <div className="p-3.5 bg-indigo-500/5 rounded-xl border border-indigo-500/10 text-xs flex items-start space-x-2" style={{ color: 'var(--text-secondary)' }}>
                     <Sparkles className="w-4.5 h-4.5 text-indigo-400 shrink-0 mt-0.5 animate-pulse" />
                     <div>
-                      <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>AI Suggestion:</span> {activeRecommendedProject.recommendationReason}
+                      <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>AI Suggestion:</span> {activeRecommendedProject?.recommendationReason}
                     </div>
                   </div>
                 </CardContent>
@@ -527,7 +527,9 @@ export default function MainDashboardPage() {
                     className="w-full text-xs h-11" 
                     rightIcon={<ChevronRight className="w-4 h-4" />}
                     onClick={() => {
-                      selectProject(activeRecommendedProject.id);
+                      if (activeRecommendedProject) {
+                        selectProject(activeRecommendedProject.id);
+                      }
                       router.push('/dashboard/projects');
                     }}
                   >
@@ -669,7 +671,7 @@ export default function MainDashboardPage() {
               </Tooltip>
             </div>
             <CardDescription className="text-xs">
-              Based on {user?.skills.slice(0, 3).join(", ")} skills foundation.
+              Based on {user?.skills?.slice(0, 3).join(", ")} skills foundation.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 flex-1 pt-1 text-xs">
