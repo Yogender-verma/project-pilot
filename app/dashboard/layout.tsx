@@ -11,6 +11,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
+import { GlobalKeyboardShortcuts } from '@/components/dashboard/GlobalKeyboardShortcuts';
 import { useTheme } from '@/lib/ThemeProvider';
 import { useAppStore } from '@/store/useAppStore';
 import {
@@ -466,6 +467,9 @@ export default function DashboardLayout({
           id="dashboard-content-area"
           className={isReadingMode ? "flex-1 w-full relative z-10" : "flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto relative z-10"}
         >
+          <GlobalKeyboardShortcuts 
+            onOpenCommandPalette={() => setCommandPaletteOpen((prev) => !prev)}
+          />
           <CommandPalette
             open={commandPaletteOpen}
             onOpenChange={setCommandPaletteOpen}
