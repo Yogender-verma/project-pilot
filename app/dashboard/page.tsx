@@ -20,6 +20,7 @@ import { Progress } from "@/components/ui/Progress";
 import Tooltip from "@/components/ui/Tooltip";
 import { useAppStore } from "@/store/useAppStore";
 import { TiltWrapper } from "@/components/ui/TiltWrapper";
+import TypingIndicator from "@/components/ai-mentor/TypingIndicator";
 import { useClerk, useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import {
