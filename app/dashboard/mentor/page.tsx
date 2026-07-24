@@ -15,8 +15,8 @@ import {
   CheckCircle,
   FileText,
   User as UserIcon,
-  Compass,
-  X,
+Compass,
+  Brain,  X,
   Maximize2,
   Minimize2,
   Flame,
@@ -246,8 +246,14 @@ export default function AiMentorChatPage() {
   };
 
   // Copy code snippet helper
-  const handleCopyCode = (code: string, msgId: string) => {
-    navigator.clipboard.writeText(code);
+// Sends a hidden follow-up prompt asking the AI to simplify its last reply
+  const handleExplainLikeImFifteen = () => {
+    sendMessage(
+      "Rewrite your previous response in extremely simple terms, using analogies suitable for a 15-year-old beginner."
+    );
+  };
+
+  const handleCopyCode = (code: string, msgId: string) => {    navigator.clipboard.writeText(code);
     setCopiedCodeIdx(msgId);
     setTimeout(() => setCopiedCodeIdx(null), 1500);
   };
@@ -468,9 +474,20 @@ export default function AiMentorChatPage() {
                     </div>
                   ))}
 
+{/* "Explain Like I'm 15" contextual action button */}
+                  {!isUser && msg.content && (
+                    <button
+                      onClick={handleExplainLikeImFifteen}
+                      className="flex items-center space-x-1.5 text-[10px] font-semibold text-slate-400 hover:text-indigo-300 border border-white/5 hover:border-indigo-500/30 bg-white/5 hover:bg-indigo-500/10 rounded-lg px-2.5 py-1.5 transition-all cursor-pointer w-fit"
+                      title="Ask the AI to simplify this response"
+                    >
+                      <Brain className="w-3.5 h-3.5" />
+                      <span>Explain Like I'm 15</span>
+                    </button>
+                  )}
+
                   {/* Render Code Snippet with Copy block if any */}
-                  {msg.codeSnippet && (
-                    <div className="space-y-2">
+                  {msg.codeSnippet && (                    <div className="space-y-2">
                       <div className="flex justify-between items-center bg-[#050214] border-b border-white/5 px-4 py-2 rounded-t-lg font-mono text-[10px] text-slate-400">
                         <span>{msg.codeSnippet.language.toUpperCase()} FILE CODE</span>
                         <button
