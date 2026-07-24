@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useChat } from '@ai-sdk/react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/Button';
-import { Send, Sparkles } from 'lucide-react';
+import { Send, Sparkles, AlertTriangle, RefreshCw } from 'lucide-react';
 
 export default function ChatInterface() {
-  const { messages, status, sendMessage } = useChat();
-  const [input, setInput] = React.useState('');
+  const { messages, status, sendMessage, reload, error } = useChat();
+  const [input, setInput] = useState('');
+  const [isTimedOut, setIsTimedOut] = useState(false);
+  
   const isLoading = status !== 'ready' && status !== 'error';
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,6 +30,23 @@ export default function ChatInterface() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Timeout monitoring (15-second threshold)
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isLoading) {
+      setIsTimedOut(false);
+      timer = setTimeout(() => {
+        setIsTimedOut(true);
+      }, 15000);
+    }
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
+  const handleRetry = () => {
+    setIsTimedOut(false);
+    reload();
+  };
 
   return (
     <div className="flex flex-col h-full bg-[#070514] text-slate-100 p-6 rounded-2xl border border-white/15">
@@ -50,6 +69,35 @@ export default function ChatInterface() {
             </div>
           </div>
         ))}
+
+        {/* Friendly Error State & Timeout Fallback UI */}
+        {(error || isTimedOut) && (
+          <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 flex flex-col space-y-3 my-2">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+              <p className="text-xs font-medium">
+                {isTimedOut
+                  ? 'The request took too long and timed out.'
+                  : 'The AI Mentor is currently unavailable or experiencing high latency.'}
+              </p>
+            </div>
+            <p className="text-[11px] text-slate-300">
+              The AI Mentor is currently unavailable or taking too long. Please try again later. The rest of your dashboard remains fully operational.
+            </p>
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRetry}
+                className="h-8 text-xs border-amber-500/30 text-amber-300 hover:bg-amber-500/20"
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Retry Request
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -63,7 +111,7 @@ export default function ChatInterface() {
         />
         <Button type="submit" disabled={isLoading} variant="premium" className="h-10 px-4 text-xs">
           <Send className="w-4 h-4 mr-1.5" />
-          {isLoading ? 'Streaming...' : 'Send'}
+          {isLoading ? 'Thinking...' : 'Send'}
         </Button>
       </form>
     </div>
