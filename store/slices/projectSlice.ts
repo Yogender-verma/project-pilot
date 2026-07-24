@@ -5,6 +5,7 @@ import {
   createActivityInDb,
   saveProjectToDb,
 } from "@/app/actions/projectActions";
+import { toast } from "sonner";
 
 export interface ProjectSlice {
   projects: Project[];
@@ -32,7 +33,7 @@ export interface ProjectSlice {
 export const createProjectSlice = (
   MOCK_PROJECTS: Project[],
   INITIAL_ROADMAPS: Record<string, Roadmap>
-): StateCreator<ProjectSlice, [], [], ProjectSlice> => (set) => ({
+): StateCreator<any, [], [], ProjectSlice> => (set, get) => ({
   projects: MOCK_PROJECTS,
 
   selectedProjectId: "project-1",
@@ -82,15 +83,15 @@ export const createProjectSlice = (
 
   roadmaps: INITIAL_ROADMAPS,
 
-  toggleStepCompletion: (projectId, stepId) =>
-    set((state) => {
+  toggleStepCompletion: (projectId, stepId) => {
+    let isCompleted = false;
+    let stepTitle = "";
+
+    set((state: any) => {
       const roadmap = state.roadmaps[projectId];
       if (!roadmap) return {};
 
-      let isCompleted = false;
-      let stepTitle = "";
-
-      const updatedSteps = roadmap.steps.map((step) => {
+      const updatedSteps = roadmap.steps.map((step: any) => {
         if (step.id === stepId) {
           isCompleted = !step.completed;
           stepTitle = step.title;
@@ -104,7 +105,7 @@ export const createProjectSlice = (
         return step;
       });
 
-      const completedCount = updatedSteps.filter((s) => s.completed).length;
+      const completedCount = updatedSteps.filter((s: any) => s.completed).length;
       const progress = Math.round(
         (completedCount / updatedSteps.length) * 100
       );
@@ -117,7 +118,7 @@ export const createProjectSlice = (
       );
 
       const projectTitle = state.projects.find(
-        (project) => project.id === projectId
+        (project: any) => project.id === projectId
       )?.title;
 
       const newActivity: ProjectActivity | null = isCompleted
@@ -152,7 +153,7 @@ export const createProjectSlice = (
           ? [newActivity, ...state.activities]
           : state.activities,
 
-        projects: state.projects.map((p) =>
+        projects: state.projects.map((p: any) =>
           p.id === projectId
             ? {
                 ...p,
@@ -165,7 +166,16 @@ export const createProjectSlice = (
             : p
         ),
       };
-    }),
+    });
+
+    if (isCompleted && stepTitle) {
+      toast.success(`Milestone completed: ${stepTitle}! (+2 Career Score)`);
+      const store = get() as any;
+      if (store && typeof store.recalculateCareerScore === "function") {
+        store.recalculateCareerScore();
+      }
+    }
+  },
 
   toggleTaskCompletion: () => set(() => ({})),
 

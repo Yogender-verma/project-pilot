@@ -216,7 +216,7 @@ export async function toggleProjectMilestoneInDb(projectId: string, stepId: stri
     if (completedStep) {
       await createUserNotification(clerkId, {
         title: 'Milestone completed',
-        message: `${completedStep.title} was completed in ${updatedProject.title}.`,
+        message: `${completedStep.title} was completed in ${updatedProject.title}. (+2 Career Score)`,
         type: 'milestone_completed',
         dedupeKey: `milestone-completed:${projectId}:${stepId}`,
         link: `/dashboard/projects/${projectId}`,
