@@ -19,10 +19,12 @@ export interface ChatSlice {
   toggleMockInterview: () => void;
   setMockInterview: (enabled: boolean) => void;
 
-  isReadingMode: boolean;
+isReadingMode: boolean;
   activeReadingMessageId: string | null;
   setReadingMode: (isReadingMode: boolean, activeReadingMessageId?: string | null) => void;
 
+  translateLanguage: string | null;
+  setTranslateLanguage: (language: string | null) => void;
   sendMessage: (
   content: string,
   codeSnippet?: {
@@ -77,11 +79,13 @@ export const createChatSlice =
     isRoastMode: enabled ? false : state.isRoastMode
   })),
 
-  isReadingMode: false,
+isReadingMode: false,
   activeReadingMessageId: null,
   setReadingMode: (isReadingMode, activeReadingMessageId = null) =>
     set({ isReadingMode, activeReadingMessageId }),
 
+  translateLanguage: null,
+  setTranslateLanguage: (language) => set({ translateLanguage: language }),
   sendMessage: (content, codeSnippet, attachments, options) =>
     set((state) => {
 
@@ -155,7 +159,7 @@ export const createChatSlice =
             content:m.content
           }));
 
-          const response=await fetch("/api/chat",{
+const response=await fetch("/api/chat",{
             method:"POST",
             headers:{
               "Content-Type":"application/json"
@@ -165,10 +169,10 @@ export const createChatSlice =
               userContext:get().user||DEFAULT_USER,
               isRoastMode,
               isMockInterview,
-              endInterview
+              endInterview,
+              translateLanguage:get().translateLanguage
             })
           });
-
           if(response.status===429){
             throw new Error("RATE_LIMIT_EXCEEDED");
           }

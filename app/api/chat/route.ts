@@ -6,8 +6,13 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-    const { messages, userContext, isRoastMode, isMockInterview, endInterview } = await req.json();
-
+const {
+              messages,
+              userContext,
+              isRoastMode,
+              isMockInterview,
+              endInterview,
+              translateLanguage, } = await req.json();
     // Resilient simulated streaming fallback mode when API key is unconfigured
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
       const lastMessage = messages[messages.length - 1]?.content || 'Hello';
@@ -124,8 +129,13 @@ Hiring Recommendation:`
 }`;
     }
 
-    // Gemini strictly requires the first message to be from the user.
-    const validMessages = [...messages];
+// If the user picked a translate language, append instructions so every
+    // future response is written in that language, except code stays in English.
+    if (translateLanguage) {
+      systemPrompt += `\n\nIMPORTANT LANGUAGE INSTRUCTION: You are an expert AI mentor. Please provide all responses in conversational ${translateLanguage}, while keeping code blocks, variable names, and syntax in standard English.`;
+    }
+
+    // Gemini strictly requires the first message to be from the user.    const validMessages = [...messages];
     while (validMessages.length > 0 && validMessages[0].role === 'assistant') {
       validMessages.shift();
     }

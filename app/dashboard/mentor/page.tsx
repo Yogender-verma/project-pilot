@@ -15,8 +15,9 @@ import {
   CheckCircle,
   FileText,
   User as UserIcon,
-  Compass,
-  X,
+Compass,
+  Languages,
+  ChevronDown,  X,
   Maximize2,
   Minimize2,
   Flame,
@@ -43,10 +44,13 @@ export default function AiMentorChatPage() {
     setReadingMode,
     isRoastMode,
     toggleRoastMode,
-    isMockInterview,
-    toggleMockInterview
+isMockInterview,
+    toggleMockInterview,
+    translateLanguage,
+    setTranslateLanguage
   } = useAppStore();
 
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [copiedCodeIdx, setCopiedCodeIdx] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<{ name: string; size: string } | null>(null);
@@ -371,12 +375,57 @@ export default function AiMentorChatPage() {
               <span>{isMockInterview ? 'MOCK INTERVIEW ON' : 'MOCK INTERVIEW'}</span>
             </button>
 
+<div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsLangMenuOpen((prev) => !prev)}
+                title="Translate AI responses"
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold tracking-wider transition-all transform active:scale-95 border cursor-pointer ${
+                  translateLanguage
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                    : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-300'
+                }`}
+              >
+                <Languages className="w-3.5 h-3.5" />
+                <span>{translateLanguage ? translateLanguage.toUpperCase() : 'TRANSLATE'}</span>
+                <ChevronDown className="w-3 h-3" />
+              </button>
+
+              {isLangMenuOpen && (
+                <div
+                  className="absolute right-0 mt-2 w-40 rounded-xl border border-white/10 bg-[#0a071a] shadow-2xl overflow-hidden z-20"
+                  onMouseLeave={() => setIsLangMenuOpen(false)}
+                >
+                  {[
+                    { label: 'English (Off)', value: null },
+                    { label: 'Telugu', value: 'Telugu' },
+                    { label: 'Hindi', value: 'Hindi' },
+                  ].map((option) => (
+                    <button
+                      key={option.label}
+                      type="button"
+                      onClick={() => {
+                        setTranslateLanguage(option.value);
+                        setIsLangMenuOpen(false);
+                      }}
+                      className={`w-full text-left px-3.5 py-2 text-xs transition-colors cursor-pointer ${
+                        translateLanguage === option.value
+                          ? 'bg-emerald-500/10 text-emerald-300 font-semibold'
+                          : 'text-slate-300 hover:bg-white/5'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <Badge variant="glow" className="text-[10px] font-mono">
               ONLINE
             </Badge>
           </div>
         </div>
-
         {/* Scrollable messages container */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {activeConv?.messages.map((msg) => {
