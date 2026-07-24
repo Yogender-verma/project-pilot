@@ -4,7 +4,7 @@ import React, { use, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import {
+import { CustomCursor } from '@/components/ui/CustomCursor';import {
   User as UserIcon,
   Globe,
   Award,
@@ -23,7 +23,8 @@ import {
   Layers,
   ChevronRight,
   Sun,
-  Moon
+  Moon,
+  Printer
 } from 'lucide-react';
 import { Github, Linkedin } from '@/components/ui/BrandIcons';
 import { useAppStore } from '@/store/useAppStore';
@@ -98,6 +99,17 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
     }
   };
 
+  const handleExportPDF = () => {
+    if (typeof window !== 'undefined') {
+      const originalTitle = document.title;
+      document.title = `${rawUsername}_projectpilot_resume`;
+      window.print();
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 1000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#070514] text-slate-300">
@@ -145,7 +157,45 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
   const userProjects = dbProfile?.projects || projects || [];
 
   return (
-    <div className="min-h-screen bg-[#070514] text-slate-100 selection:bg-indigo-500 selection:text-white">
+<div className="min-h-screen bg-[#070514] text-slate-100 selection:bg-indigo-500 selection:text-white print:bg-white print:text-slate-900">
+      {/* Glowing custom cursor - desktop only, auto-disabled on touch devices */}
+      <CustomCursor />
+
+      {/* Print-specific Optimizations (@media print) */}      <style jsx global>{`
+        @media print {
+          @page {
+            size: A4;
+            margin: 15mm;
+          }
+          header, .no-print, button {
+            display: none !important;
+          }
+          body, .min-h-screen {
+            background-color: #ffffff !important;
+            color: #1e293b !important;
+          }
+          section {
+            break-inside: avoid;
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+            color: #1e293b !important;
+            margin-bottom: 1rem;
+            padding: 1rem !important;
+          }
+          h1, h2, h3, p, span {
+            color: #0f172a !important;
+          }
+          .text-slate-300, .text-slate-400, .text-slate-500 {
+            color: #475569 !important;
+          }
+          .bg-white\/5, .bg-indigo-950\/40 {
+            background-color: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+          }
+        }
+      `}</style>
+
       {/* Top Glassmorphic Navigation Bar */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070514]/80 border-b border-white/10 px-4 sm:px-8 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center space-x-2">
@@ -159,9 +209,19 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
         </Link>
 
         <div className="flex items-center space-x-3">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleExportPDF}
+            className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm flex items-center gap-1.5"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            Export to PDF
+          </Button>
+
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white transition"
+            className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white transition no-print"
             title="Toggle theme"
           >
             {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
@@ -171,7 +231,7 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
             variant="outline"
             size="sm"
             onClick={handleCopyLink}
-            className="h-8 text-xs border-white/10 text-slate-200 hover:text-white"
+            className="h-8 text-xs border-white/10 text-slate-200 hover:text-white no-print"
           >
             {copiedLink ? <Check className="w-3.5 h-3.5 mr-1 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
             {copiedLink ? 'Copied' : 'Share'}
@@ -218,7 +278,7 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
               </p>
 
               {/* Socials & Share Links */}
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2 no-print">
                 {githubAnalytics?.connected && (
                   <a
                     href={`https://github.com/${githubAnalytics.username}`}
@@ -300,7 +360,7 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {userProjects.map((project: any) => (
-              <Card key={project.id} hoverEffect className="border-white/10 bg-white/5 flex flex-col justify-between">
+              <Card key={project.id} hoverEffect className="border-white/10 bg-white/5 flex flex-col justify-between break-inside-avoid">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-base font-bold text-white">{project.title}</CardTitle>
@@ -379,7 +439,7 @@ export default function PublicPortfolioPage({ params }: PublicPortfolioProps) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-8 text-center text-xs text-slate-500">
+      <footer className="border-t border-white/10 py-8 text-center text-xs text-slate-500 no-print">
         <p>Powered by <strong className="text-slate-400">ProjectPilot</strong> — Shareable Developer Portfolios</p>
       </footer>
     </div>

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.17",
+    "@ai-sdk/react": "^4.0.40",
     "@clerk/nextjs": "^7.3.5",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.8.0",
@@ -19,7 +20,7 @@
     "@uploadthing/react": "^7.3.3",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
-    "ai": "^7.0.28",
+    "ai": "^7.0.37",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "focus-trap-react": "^12.0.3",
@@ -30,6 +31,8 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.76.0",
+    "react-hotkeys-hook": "^5.3.3",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.8.1",
     "sonner": "^2.0.7",
     "svix": "^1.93.0",
@@ -41,6 +44,7 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
+    "@types/dom-speech-recognition": "^0.0.12",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",
     "@types/react": "^19",

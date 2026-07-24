@@ -19,9 +19,13 @@ import {
   X,
   Maximize2,
   Minimize2,
-  Flame
+  Flame,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { useSpeechRecognition } from '@/lib/useSpeechRecognition';
+import { notify } from '@/lib/toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -46,8 +50,32 @@ export default function AiMentorChatPage() {
   const [inputMessage, setInputMessage] = useState('');
   const [copiedCodeIdx, setCopiedCodeIdx] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<{ name: string; size: string } | null>(null);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Voice input via Web Speech API
+  const {
+    isListening,
+    isSupported: speechSupported,
+    start: startListening,
+    stop: stopListening,
+  } = useSpeechRecognition({
+    onResult: (text, isFinal) => {
+      setInputMessage((prev) => {
+        const base = prev.trimEnd();
+        if (isFinal) {
+          // On final result, append with a space separator if needed
+          return base ? `${base} ${text}` : text;
+        }
+        // During interim results, show the live transcription
+        return text;
+      });
+    },
+    onError: (msg) => {
+      notify.error(msg);
+    },
+  });
 
   // Retrieve active conversation
   const activeConv = conversations.find((c) => c.id === activeConversationId) || conversations[0];
@@ -283,6 +311,61 @@ export default function AiMentorChatPage() {
         </div>
       </div>
 
+      {/* Mobile Sidebar Overlay */}
+      {showMobileSidebar && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+            onClick={() => setShowMobileSidebar(false)} 
+          />
+          <div className="relative w-64 h-full border-r flex flex-col shadow-2xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--surface-secondary)' }}>
+            <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-subtle)' }}>
+              <Button 
+                variant="glow" 
+                className="text-xs h-10 flex-1 mr-2" 
+                leftIcon={<Plus className="w-4 h-4" />}
+                onClick={() => { createNewConversation(); setShowMobileSidebar(false); }}
+              >
+                New Session
+              </Button>
+              <button onClick={() => setShowMobileSidebar(false)} className="p-2 text-slate-400 hover:text-white rounded-lg bg-white/5 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {conversations.map((c) => {
+                const isActive = activeConversationId === c.id;
+                return (
+                  <div
+                    key={c.id}
+                    className={`flex items-center justify-between p-3 rounded-xl cursor-pointer group text-xs font-semibold ${
+                      isActive ? 'bg-indigo-600/15 text-indigo-400' : 'hover:bg-indigo-500/5'
+                    }`}
+                    style={!isActive ? { color: 'var(--text-secondary)' } : {}}
+                    onClick={() => { selectConversation(c.id); setShowMobileSidebar(false); }}
+                  >
+                    <div className="flex items-center space-x-2 truncate pr-2">
+                      <MessageSquareCode className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{c.title}</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteConversation(c.id);
+                      }}
+                      className="opacity-100 p-1 hover:text-rose-400 transition-opacity cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Right panel: Active chat window */}
       <div className="flex-1 flex flex-col justify-between h-full bg-gradient-to-b from-transparent to-[#0a0728]/10 relative">
         <input 
@@ -293,9 +376,15 @@ export default function AiMentorChatPage() {
         />
 
         {/* Chat top info header */}
-        <div className="h-16 border-b px-6 flex items-center justify-between shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center animate-pulse">
+        <div className="h-16 border-b px-4 sm:px-6 flex items-center justify-between shrink-0" style={{ borderColor: 'var(--border-subtle)' }}>
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <button 
+              className="md:hidden p-2 -ml-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              onClick={() => setShowMobileSidebar(true)}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <div className="hidden sm:flex w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 items-center justify-center animate-pulse shrink-0">
               <Compass className="w-4.5 h-4.5" />
             </div>
             <div>
@@ -328,23 +417,23 @@ export default function AiMentorChatPage() {
               }`}
             >
               <Flame className={`w-3.5 h-3.5 ${isRoastMode ? 'text-rose-400 animate-bounce' : ''}`} />
-              <span>{isRoastMode ? 'ROAST MODE ON' : 'ROAST MODE'}</span>
+              <span className="hidden sm:inline">{isRoastMode ? 'ROAST MODE ON' : 'ROAST MODE'}</span>
             </button>
             <button
               type="button"
               onClick={toggleMockInterview}
               title={isMockInterview ? 'Disable Mock Interview' : 'Enable AI Mock Interview'}
-              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold tracking-wider transition-all transform active:scale-95 border cursor-pointer ${
+              className={`flex items-center space-x-1.5 px-3 py-1.5 sm:px-3.5 rounded-full text-[10px] font-bold tracking-wider transition-all transform active:scale-95 border cursor-pointer ${
                 isMockInterview
                   ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-[0_0_15px_rgba(99,102,241,0.3)] animate-pulse font-extrabold'
                   : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-300'
               }`}
             >
               <span>🎤</span>
-              <span>{isMockInterview ? 'MOCK INTERVIEW ON' : 'MOCK INTERVIEW'}</span>
+              <span className="hidden sm:inline">{isMockInterview ? 'MOCK INTERVIEW ON' : 'MOCK INTERVIEW'}</span>
             </button>
 
-            <Badge variant="glow" className="text-[10px] font-mono">
+            <Badge variant="glow" className="hidden sm:inline-flex text-[10px] font-mono">
               ONLINE
             </Badge>
           </div>
@@ -549,7 +638,7 @@ export default function AiMentorChatPage() {
               onKeyDown={handleKeyDown}
               aria-label="Ask AI Mentor for architectural guidelines"
               rows={2}
-              className="w-full text-xs sm:text-sm rounded-2xl border p-4 pr-32 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 resize-none glass-panel"
+              className="w-full text-xs sm:text-sm rounded-2xl border p-3 pb-12 sm:p-4 sm:pr-40 sm:pb-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 resize-none glass-panel"
               style={{
                 backgroundColor: 'var(--input-bg)',
                 borderColor: 'var(--input-border)',
@@ -557,8 +646,8 @@ export default function AiMentorChatPage() {
               }}
             />
             
-            {/* Input Action tools (File attach & Send button) */}
-            <div className="absolute right-4.5 bottom-4 flex items-center space-x-2">
+            {/* Input Action tools (File attach, Mic, & Send button) */}
+            <div className="absolute right-2 bottom-2 sm:right-4.5 sm:bottom-4 flex justify-end items-center space-x-1 sm:space-x-2">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -568,6 +657,33 @@ export default function AiMentorChatPage() {
               >
                 <Paperclip className="w-4 h-4" aria-hidden="true" />
               </button>
+
+              {speechSupported && (
+                <button
+                  type="button"
+                  onClick={isListening ? stopListening : startListening}
+                  aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                  title={isListening ? 'Stop listening' : 'Speak your message'}
+                  className={`relative p-2 rounded-xl border transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    isListening
+                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+                      : 'border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  {isListening ? (
+                    <MicOff className="w-4 h-4" aria-hidden="true" />
+                  ) : (
+                    <Mic className="w-4 h-4" aria-hidden="true" />
+                  )}
+                  {isListening && (
+                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+                    </span>
+                  )}
+                </button>
+              )}
+
               <Button
                 type="button"
                 variant="premium"
@@ -575,12 +691,23 @@ export default function AiMentorChatPage() {
                 onClick={handleSend}
                 aria-label="Send message to AI mentor"
                 title="Send message to AI mentor"
-                className="h-10 px-4 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                className="h-9 sm:h-10 px-3 sm:px-4 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 rightIcon={<CornerDownLeft className="w-4.5 h-4.5" />}
               >
                 Send
               </Button>
             </div>
+
+            {/* Voice input listening indicator */}
+            {isListening && (
+              <div className="flex items-center space-x-2 mt-2 text-[11px] text-rose-400 font-medium">
+                <span className="flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                </span>
+                <span>Listening... Speak now</span>
+              </div>
+            )}
           </div>
         </div>
 

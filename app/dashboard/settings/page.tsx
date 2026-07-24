@@ -811,7 +811,7 @@ export default function SettingsPage() {
               <CardTitle className="text-base font-bold">Connected Integrations</CardTitle>
               <CardDescription className="text-xs">Connect credentials to sync active files.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 pt-1">
+            <CardContent className="space-y-4 pt-1 overflow-x-auto">
 
               {/* GitHub integration status */}
               <div
@@ -891,7 +891,7 @@ export default function SettingsPage() {
               <CardTitle className="text-base font-bold text-indigo-300">Data Management</CardTitle>
               <CardDescription className="text-xs">Export or import your profile and projects data.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 pt-1">
+            <CardContent className="space-y-4 pt-1 overflow-x-auto">
               
               <div className="p-3.5 bg-indigo-500/5 rounded-xl border border-indigo-500/10 flex flex-col space-y-3.5 text-xs text-slate-400">
                 <div>

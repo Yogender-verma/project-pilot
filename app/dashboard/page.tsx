@@ -36,6 +36,7 @@ import {
 import { generateAdaptiveDashboard } from "@/lib/adaptiveEngine";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React from "react";
 
 const SkillRadarChart = dynamic(
@@ -64,6 +65,7 @@ export default function MainDashboardPage() {
     selectProject,
   } = useAppStore();
   const { user: clerkUser } = useUser();
+  const router = useRouter();
 
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
@@ -257,11 +259,14 @@ export default function MainDashboardPage() {
           </p>
         </div>
 
-        <Link href="/dashboard/projects" className="shrink-0 w-full md:w-auto">
-          <Button variant="glow" className="w-full h-12 px-5" rightIcon={<ArrowUpRight className="w-4.5 h-4.5" />}>
-            View Blueprints
-          </Button>
-        </Link>
+        <Button 
+          variant="glow" 
+          className="shrink-0 w-full md:w-auto h-12 px-5" 
+          rightIcon={<ArrowUpRight className="w-4.5 h-4.5" />}
+          onClick={() => router.push('/dashboard/projects')}
+        >
+          View Blueprints
+        </Button>
       </motion.div>
 
       {/* Main Core Widgets Grid */}
@@ -517,15 +522,17 @@ export default function MainDashboardPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="pt-2 border-t border-white/5">
-                  <Link 
-                    href={`/dashboard/projects`} 
-                    onClick={() => selectProject(activeRecommendedProject.id)}
-                    className="w-full"
+                  <Button 
+                    variant="glow" 
+                    className="w-full text-xs h-11" 
+                    rightIcon={<ChevronRight className="w-4 h-4" />}
+                    onClick={() => {
+                      selectProject(activeRecommendedProject.id);
+                      router.push('/dashboard/projects');
+                    }}
                   >
-                    <Button variant="glow" className="w-full text-xs h-11" rightIcon={<ChevronRight className="w-4 h-4" />}>
-                      Build Project Blueprint & Roadmap
-                    </Button>
-                  </Link>
+                    Build Project Blueprint & Roadmap
+                  </Button>
                 </CardFooter>
               </Card>
             </TiltWrapper>
@@ -585,11 +592,13 @@ export default function MainDashboardPage() {
             )}
           </CardContent>
           <CardFooter className="pt-2">
-            <Link href="/dashboard/career" className="w-full">
-              <Button variant="outline" className="w-full text-xs h-11">
+              <Button 
+                variant="outline" 
+                className="w-full text-xs h-11"
+                onClick={() => router.push('/dashboard/career')}
+              >
                 View All Skill Gaps
               </Button>
-            </Link>
           </CardFooter>
         </Card>
       </div>
@@ -735,11 +744,13 @@ export default function MainDashboardPage() {
             </div>
           </CardContent>
           <CardFooter className="pt-2">
-            <Link href="/dashboard/roadmaps" className="w-full">
-              <Button variant="outline" className="w-full text-xs h-11">
+              <Button 
+                variant="outline" 
+                className="w-full text-xs h-11"
+                onClick={() => router.push('/dashboard/roadmaps')}
+              >
                 Open Project Roadmap
               </Button>
-            </Link>
           </CardFooter>
         </Card>
       </div>
