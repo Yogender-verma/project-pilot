@@ -29,6 +29,8 @@ import { notify } from '@/lib/toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import MarkdownRenderer from '@/components/ai-mentor/MarkdownRenderer';
+import TypingIndicator from '@/components/ai-mentor/TypingIndicator';
 
 export default function AiMentorChatPage() {
   const { 
@@ -48,10 +50,17 @@ export default function AiMentorChatPage() {
   } = useAppStore();
 
   const [inputMessage, setInputMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const [copiedCodeIdx, setCopiedCodeIdx] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<{ name: string; size: string } | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Voice input via Web Speech API
   const {
@@ -64,10 +73,8 @@ export default function AiMentorChatPage() {
       setInputMessage((prev) => {
         const base = prev.trimEnd();
         if (isFinal) {
-          // On final result, append with a space separator if needed
           return base ? `${base} ${text}` : text;
         }
-        // During interim results, show the live transcription
         return text;
       });
     },
@@ -79,12 +86,66 @@ export default function AiMentorChatPage() {
   // Retrieve active conversation
   const activeConv = conversations.find((c) => c.id === activeConversationId) || conversations[0];
 
-  // Auto scroll to bottom on new messages
+  // Auto scroll to bottom on new messages or typing indicator trigger
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeConv?.messages]);
+  }, [activeConv?.messages, isSending]);
 
-  // early return for distraction-free Reading Mode
+  // Handle typing input submit with local loading state
+  const handleSend = async () => {
+    const clean = inputMessage.trim();
+    if (!clean && !attachment) return;
+
+    setIsSending(true);
+
+    try {
+      await sendMessage(
+        clean || `Sent attachment: ${attachment?.name}`,
+        undefined,
+        attachment ? [{ name: attachment.name, size: attachment.size, type: 'file' }] : undefined
+      );
+    } catch (err) {
+      console.error('Failed to send message:', err);
+    } finally {
+      setIsSending(false);
+    }
+    
+    setInputMessage('');
+    setAttachment(null);
+  };
+
+  // Keyboard shortcut (Enter to send)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Handle Mock file upload
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAttachment({
+        name: file.name,
+        size: `${Math.round(file.size / 1024)} KB`
+      });
+    }
+  };
+
+  // Copy code snippet helper
+  const handleCopyCode = (code: string, msgId: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCodeIdx(msgId);
+    setTimeout(() => setCopiedCodeIdx(null), 1500);
+  };
+
+  // Prevent SSR Hydration Mismatch
+  if (!isMounted) {
+    return null;
+  }
+
+  // Early return for distraction-free Reading Mode
   if (isReadingMode && activeReadingMessageId) {
     const readingMsg = activeConv?.messages.find((m) => m.id === activeReadingMessageId);
     if (readingMsg) {
@@ -145,9 +206,9 @@ export default function AiMentorChatPage() {
                 </button>
               </div>
 
-              {/* Main long-form body content */}
-              <article className="max-w-none text-sm sm:text-base leading-relaxed text-slate-200 whitespace-pre-line tracking-wide">
-                {readingMsg.content}
+              {/* Main long-form body content rendered with Markdown */}
+              <article className="max-w-none text-sm sm:text-base leading-relaxed text-slate-200">
+                <MarkdownRenderer content={readingMsg.content} />
               </article>
 
               {/* Attachments if any */}
@@ -208,49 +269,6 @@ export default function AiMentorChatPage() {
       );
     }
   }
-
-
-
-  // Handle typing input submit
-  const handleSend = () => {
-    const clean = inputMessage.trim();
-    if (!clean && !attachment) return;
-
-    sendMessage(
-      clean || `Sent attachment: ${attachment?.name}`,
-      undefined,
-      attachment ? [{ name: attachment.name, size: attachment.size, type: 'file' }] : undefined
-    );
-    
-    setInputMessage('');
-    setAttachment(null);
-  };
-
-  // Keyboard shortcut (Enter to send)
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  // Handle Mock file upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setAttachment({
-        name: file.name,
-        size: `${Math.round(file.size / 1024)} KB`
-      });
-    }
-  };
-
-  // Copy code snippet helper
-  const handleCopyCode = (code: string, msgId: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCodeIdx(msgId);
-    setTimeout(() => setCopiedCodeIdx(null), 1500);
-  };
 
   // Prompt suggestions
   const suggestedPrompts = [
@@ -435,19 +453,26 @@ export default function AiMentorChatPage() {
                     </button>
                   )}
                   
-                  {/* Text content rendering */}
+                  {/* Text content rendering (Integrated MarkdownRenderer for AI responses) */}
                   {isFinalReport ? (
                     <div className="space-y-2.5">
                       {reportSections.map((section) => (
                         <div key={section.heading} className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3">
                           <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">{section.heading}</p>
-                          <p className="mt-1 whitespace-pre-line">{section.content}</p>
+                          <div className="mt-1">
+                            <MarkdownRenderer content={section.content} />
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <>
-                      <p className="whitespace-pre-line">{msg.content}</p>
+                      {isUser ? (
+                        <p className="whitespace-pre-line">{msg.content}</p>
+                      ) : (
+                        <MarkdownRenderer content={msg.content} />
+                      )}
+                      
                       {score !== null && (
                         <div className={`rounded-xl border p-3 text-center ${
                           score >= 8 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : score >= 5 ? 'border-amber-500/30 bg-amber-500/10 text-amber-300' : 'border-rose-500/30 bg-rose-500/10 text-rose-300'
@@ -507,6 +532,10 @@ export default function AiMentorChatPage() {
               </div>
             );
           })}
+
+          {/* Typing Indicator while waiting for AI response */}
+          {isSending && <TypingIndicator />}
+
           <div ref={scrollRef} />
         </div>
 
@@ -541,7 +570,7 @@ export default function AiMentorChatPage() {
                   setInputMessage(p.value);
                   handleSend();
                 }}
-            className="px-3 py-2 border rounded-xl text-left text-[11px] text-indigo-400 font-semibold cursor-pointer max-w-sm transition-all"
+                className="px-3 py-2 border rounded-xl text-left text-[11px] text-indigo-400 font-semibold cursor-pointer max-w-sm transition-all"
                 style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
               >
                 ★ {p.label}
