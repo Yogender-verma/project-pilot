@@ -417,23 +417,23 @@ export default function AiMentorChatPage() {
               }`}
             >
               <Flame className={`w-3.5 h-3.5 ${isRoastMode ? 'text-rose-400 animate-bounce' : ''}`} />
-              <span>{isRoastMode ? 'ROAST MODE ON' : 'ROAST MODE'}</span>
+              <span className="hidden sm:inline">{isRoastMode ? 'ROAST MODE ON' : 'ROAST MODE'}</span>
             </button>
             <button
               type="button"
               onClick={toggleMockInterview}
               title={isMockInterview ? 'Disable Mock Interview' : 'Enable AI Mock Interview'}
-              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold tracking-wider transition-all transform active:scale-95 border cursor-pointer ${
+              className={`flex items-center space-x-1.5 px-3 py-1.5 sm:px-3.5 rounded-full text-[10px] font-bold tracking-wider transition-all transform active:scale-95 border cursor-pointer ${
                 isMockInterview
                   ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-[0_0_15px_rgba(99,102,241,0.3)] animate-pulse font-extrabold'
                   : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-300'
               }`}
             >
               <span>🎤</span>
-              <span>{isMockInterview ? 'MOCK INTERVIEW ON' : 'MOCK INTERVIEW'}</span>
+              <span className="hidden sm:inline">{isMockInterview ? 'MOCK INTERVIEW ON' : 'MOCK INTERVIEW'}</span>
             </button>
 
-            <Badge variant="glow" className="text-[10px] font-mono">
+            <Badge variant="glow" className="hidden sm:inline-flex text-[10px] font-mono">
               ONLINE
             </Badge>
           </div>
@@ -638,7 +638,7 @@ export default function AiMentorChatPage() {
               onKeyDown={handleKeyDown}
               aria-label="Ask AI Mentor for architectural guidelines"
               rows={2}
-              className="w-full text-xs sm:text-sm rounded-2xl border p-3 sm:p-4 sm:pr-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 resize-none glass-panel"
+              className="w-full text-xs sm:text-sm rounded-2xl border p-3 pb-12 sm:p-4 sm:pr-40 sm:pb-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 resize-none glass-panel"
               style={{
                 backgroundColor: 'var(--input-bg)',
                 borderColor: 'var(--input-border)',
@@ -647,7 +647,7 @@ export default function AiMentorChatPage() {
             />
             
             {/* Input Action tools (File attach, Mic, & Send button) */}
-            <div className="sm:absolute sm:right-4.5 sm:bottom-4 mt-2 sm:mt-0 flex justify-end items-center space-x-2">
+            <div className="absolute right-2 bottom-2 sm:right-4.5 sm:bottom-4 flex justify-end items-center space-x-1 sm:space-x-2">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
