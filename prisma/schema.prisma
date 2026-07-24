@@ -1,3 +1,12 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
 model User {
   id                  String         @id @default(cuid())
   clerkId             String         @unique
@@ -16,17 +25,44 @@ model User {
   projects            Project[]
   notifications       Notification[]
   activities          Activity[]
-  aiMessages          AiMessage[]    // Added relation
+  aiMessages          AiMessage[]    @relation("UserAiMessages")
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 }
 
+model Project {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  createdAt DateTime @default(now())
+}
+
 model AiMessage {
   id        String   @id @default(cuid())
-  userId    String   // Foreign key matching User.id (or clerkId)
+  userId    String   
   role      String   // "user" or "assistant"
   content   String   @db.Text
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, name: "UserAiMessages")
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
