@@ -24,20 +24,20 @@ export interface ChatSlice {
   setReadingMode: (isReadingMode: boolean, activeReadingMessageId?: string | null) => void;
 
   sendMessage: (
-  content: string,
-  codeSnippet?: {
-    language: string;
-    code: string;
-  },
-  attachments?: {
-    name: string;
-    size: string;
-    type: string;
-  }[],
-  options?: {
-    endInterview?: boolean;
-  }
-) => void;
+    content: string,
+    codeSnippet?: {
+      language: string;
+      code: string;
+    },
+    attachments?: {
+      name: string;
+      size: string;
+      type: string;
+    }[],
+    options?: {
+      endInterview?: boolean;
+    }
+  ) => void;
 
   createNewConversation: (title?: string) => string;
 
@@ -47,314 +47,235 @@ export interface ChatSlice {
 }
 
 export const createChatSlice =
-(
-  INITIAL_CONVERSATIONS: ChatConversation[],
-  DEFAULT_USER: User
-): StateCreator<AppStore, [], [], ChatSlice> =>
-(set, get) => ({
+  (
+    INITIAL_CONVERSATIONS: ChatConversation[],
+    DEFAULT_USER: User
+  ): StateCreator<AppStore, [], [], ChatSlice> =>
+  (set, get) => ({
 
-  conversations: INITIAL_CONVERSATIONS,
+    conversations: INITIAL_CONVERSATIONS,
 
-  activeConversationId: "conv-1",
+    activeConversationId: "conv-1",
 
-  isRoastMode: false,
-  toggleRoastMode: () => set((state) => {
-    const isRoastMode = !state.isRoastMode;
-    return { isRoastMode, isMockInterview: isRoastMode ? false : state.isMockInterview };
-  }),
-  setRoastMode: (isRoastMode) => set((state) => ({
-    isRoastMode,
-    isMockInterview: isRoastMode ? false : state.isMockInterview
-  })),
+    isRoastMode: false,
+    toggleRoastMode: () =>
+      set((state) => {
+        const isRoastMode = !state.isRoastMode;
+        return { isRoastMode, isMockInterview: isRoastMode ? false : state.isMockInterview };
+      }),
+    setRoastMode: (isRoastMode) =>
+      set((state) => ({
+        isRoastMode,
+        isMockInterview: isRoastMode ? false : state.isMockInterview,
+      })),
 
-  isMockInterview: false,
-  toggleMockInterview: () => set((state) => {
-    const isMockInterview = !state.isMockInterview;
-    return { isMockInterview, isRoastMode: isMockInterview ? false : state.isRoastMode };
-  }),
-  setMockInterview: (enabled) => set((state) => ({
-    isMockInterview: enabled,
-    isRoastMode: enabled ? false : state.isRoastMode
-  })),
+    isMockInterview: false,
+    toggleMockInterview: () =>
+      set((state) => {
+        const isMockInterview = !state.isMockInterview;
+        return { isMockInterview, isRoastMode: isMockInterview ? false : state.isRoastMode };
+      }),
+    setMockInterview: (enabled) =>
+      set((state) => ({
+        isMockInterview: enabled,
+        isRoastMode: enabled ? false : state.isRoastMode,
+      })),
 
-  isReadingMode: false,
-  activeReadingMessageId: null,
-  setReadingMode: (isReadingMode, activeReadingMessageId = null) =>
-    set({ isReadingMode, activeReadingMessageId }),
+    isReadingMode: false,
+    activeReadingMessageId: null,
+    setReadingMode: (isReadingMode, activeReadingMessageId = null) =>
+      set({ isReadingMode, activeReadingMessageId }),
 
-  sendMessage: (content, codeSnippet, attachments, options) =>
-    set((state) => {
+    sendMessage: (content, codeSnippet, attachments, options) =>
+      set((state) => {
+        const activeId = state.activeConversationId;
+        const isRoastMode = state.isRoastMode;
+        const isMockInterview = state.isMockInterview;
+        const endInterview = options?.endInterview ?? false;
 
-      const activeId = state.activeConversationId;
-      const isRoastMode = state.isRoastMode;
-      const isMockInterview = state.isMockInterview;
-      const endInterview = options?.endInterview ?? false;
+        if (!activeId) return {};
 
-      if (!activeId) return {};
+        const newMessage: ChatMessage = {
+          id: "msg-usr-" + Math.random().toString(36).substr(2, 9),
+          role: "user",
+          content,
+          timestamp: new Date(),
+          codeSnippet,
+          attachments,
+        };
 
-      const newMessage: ChatMessage = {
-        id: "msg-usr-" + Math.random().toString(36).substr(2,9),
-        role: "user",
-        content,
-        timestamp: new Date(),
-        codeSnippet,
-        attachments
-      };
-
-      const updatedConversations =
-        state.conversations.map(conv=>{
-          if(conv.id===activeId){
-            return{
+        const updatedConversations = state.conversations.map((conv) => {
+          if (conv.id === activeId) {
+            return {
               ...conv,
-              messages:[...conv.messages,newMessage],
-              lastUpdated:new Date()
+              messages: [...conv.messages, newMessage],
+              lastUpdated: new Date(),
             };
           }
           return conv;
         });
 
-      const aiMessageId =
-        "msg-ai-"+Math.random().toString(36).substr(2,9);
+        const aiMessageId = "msg-ai-" + Math.random().toString(36).substr(2, 9);
 
-      const initialAiMessage:ChatMessage={
-        id:aiMessageId,
-        role:"assistant",
-        content:"",
-        timestamp:new Date()
-      };
+        const initialAiMessage: ChatMessage = {
+          id: aiMessageId,
+          role: "assistant",
+          content: "",
+          timestamp: new Date(),
+        };
 
-      const updatedConversationsWithAi =
-        updatedConversations.map(conv=>{
-          if(conv.id===activeId){
-            return{
+        const updatedConversationsWithAi = updatedConversations.map((conv) => {
+          if (conv.id === activeId) {
+            return {
               ...conv,
-              messages:[
-                ...conv.messages,
-                initialAiMessage
-              ]
+              messages: [...conv.messages, initialAiMessage],
             };
           }
           return conv;
         });
 
-      (async()=>{
+        (async () => {
+          try {
+            const activeConv = get().conversations.find((c) => c.id === activeId);
 
-        try{
+            if (!activeConv) return;
 
-          const activeConv=get().conversations.find(
-            c=>c.id===activeId
-          );
-
-          if(!activeConv)return;
-
-          const apiMessages=[
-            ...activeConv.messages,
-            newMessage
-          ].map(m=>({
-            role:m.role,
-            content:m.content
-          }));
-
-          const response=await fetch("/api/chat",{
-            method:"POST",
-            headers:{
-              "Content-Type":"application/json"
-            },
-            body:JSON.stringify({
-              messages:apiMessages,
-              userContext:get().user||DEFAULT_USER,
-              isRoastMode,
-              isMockInterview,
-              endInterview
-            })
-          });
-
-          if(response.status===429){
-            throw new Error("RATE_LIMIT_EXCEEDED");
-          }
-
-          if(!response.ok||!response.body){
-            throw new Error("Failed");
-          }
-
-          const reader=response.body.getReader();
-
-          const decoder=new TextDecoder();
-
-          let aiContent="";
-
-          while(true){
-
-            const {done,value}=await reader.read();
-
-            if(done)break;
-
-            aiContent+=decoder.decode(value,{stream:true});
-
-            set(s=>({
-
-              conversations:s.conversations.map(c=>{
-
-                if(c.id===activeId){
-
-                  return{
-
-                    ...c,
-
-                    messages:c.messages.map(m=>
-
-                      m.id===aiMessageId
-                      ?{...m,content:aiContent}
-                      :m
-                    ),
-
-                    lastUpdated:new Date()
-
-                  };
-
-                }
-
-                return c;
-
-              })
-
+            const apiMessages = [...activeConv.messages, newMessage].map((m) => ({
+              role: m.role,
+              content: m.content,
             }));
 
+            const response = await fetch("/api/chat", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                messages: apiMessages,
+                userContext: get().user || DEFAULT_USER,
+                isRoastMode,
+                isMockInterview,
+                endInterview,
+              }),
+            });
+
+            if (response.status === 429) {
+              throw new Error("RATE_LIMIT_EXCEEDED");
+            }
+
+            if (!response.ok || !response.body) {
+              throw new Error("Failed");
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let aiContent = "";
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              aiContent += decoder.decode(value, { stream: true });
+
+              set((s) => ({
+                conversations: s.conversations.map((c) => {
+                  if (c.id === activeId) {
+                    return {
+                      ...c,
+                      messages: c.messages.map((m) =>
+                        m.id === aiMessageId ? { ...m, content: aiContent } : m
+                      ),
+                      lastUpdated: new Date(),
+                    };
+                  }
+                  return c;
+                }),
+              }));
+            }
+          } catch (error) {
+            console.error(error);
+
+            const isRateLimit =
+              error instanceof Error && error.message === "RATE_LIMIT_EXCEEDED";
+
+            const errorMessage = isRateLimit
+              ? "You have exceeded the rate limit. Please try again later."
+              : `### Technical Guidance Error\n\nI encountered an issue processing your request. Please check your network connection or try again.`;
+
+            if (isRateLimit) {
+              toast.error("Too many requests. Try again later.");
+            }
+
+            set((s) => ({
+              conversations: s.conversations.map((c) => {
+                if (c.id === activeId) {
+                  return {
+                    ...c,
+                    messages: c.messages.map((m) =>
+                      m.id === aiMessageId ? { ...m, content: errorMessage } : m
+                    ),
+                  };
+                }
+                return c;
+              }),
+            }));
           }
+        })();
 
-        }
+        return {
+          conversations: updatedConversationsWithAi,
+        };
+      }),
 
-        catch(error){
+    createNewConversation: (title) => {
+      const id = "conv-" + Math.random().toString(36).substr(2, 9);
 
-          console.error(error);
+      const conv: ChatConversation = {
+        id,
+        title: title || "New Mentor Guidance Session",
+        messages: [
+          {
+            id: "msg-" + Math.random().toString(36).substr(2, 9),
+            role: "assistant",
+            content: `Hello! I am your **AI Career Mentor**. Ask me anything about your project architecture, code implementations, or best practices!
 
-          const isRateLimit=
-            error instanceof Error &&
-            error.message==="RATE_LIMIT_EXCEEDED";
+Here is an example implementation:
 
-          const errorMessage=isRateLimit
-          ?"You have exceeded the rate limit."
-          :"Sorry, something went wrong.";
-
-          if(isRateLimit){
-            toast.error(
-              "Too many requests. Try again later."
-            );
-          }
-
-          set(s=>({
-
-            conversations:s.conversations.map(c=>{
-
-              if(c.id===activeId){
-
-                return{
-
-                  ...c,
-
-                  messages:c.messages.map(m=>
-
-                    m.id===aiMessageId
-                    ?{...m,content:errorMessage}
-                    :m
-
-                  )
-
-                };
-
-              }
-
-              return c;
-
-            })
-
-          }));
-
-        }
-
-      })();
-
-      return{
-
-        conversations:updatedConversationsWithAi
-
+\`\`\`typescript
+// Quick Example: Simple fetch utility
+export async function fetchData<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(\`Request failed: \${response.status}\`);
+  return response.json();
+}
+\`\`\`
+`,
+            timestamp: new Date(),
+          },
+        ],
+        lastUpdated: new Date(),
       };
 
-    }),
+      set((state) => ({
+        conversations: [conv, ...state.conversations],
+        activeConversationId: id,
+      }));
 
-  createNewConversation:(title)=>{
+      return id;
+    },
 
-    const id="conv-"+Math.random().toString(36).substr(2,9);
+    selectConversation: (id) =>
+      set({
+        activeConversationId: id,
+      }),
 
-    const conv:ChatConversation={
-
-      id,
-
-      title:title||"New Mentor Guidance Session",
-
-      messages:[
-
-        {
-
-          id:"msg-"+Math.random().toString(36).substr(2,9),
-
-          role:"assistant",
-
-          content:
-          "Hello! I am your AI Career Mentor.",
-
-          timestamp:new Date()
-
-        }
-
-      ],
-
-      lastUpdated:new Date()
-
-    };
-
-    set(state=>({
-
-      conversations:[conv,...state.conversations],
-
-      activeConversationId:id
-
-    }));
-
-    return id;
-
-  },
-
-  selectConversation:(id)=>
-
-    set({
-
-      activeConversationId:id
-
-    }),
-
-  deleteConversation:(id)=>
-
-    set(state=>{
-
-      const updated=
-
-        state.conversations.filter(c=>c.id!==id);
-
-      return{
-
-        conversations:updated,
-
-        activeConversationId:
-
-          state.activeConversationId===id
-
-          ?updated[0]?.id??null
-
-          :state.activeConversationId
-
-      };
-
-    })
-
-});
+    deleteConversation: (id) =>
+      set((state) => {
+        const updated = state.conversations.filter((c) => c.id !== id);
+        return {
+          conversations: updated,
+          activeConversationId:
+            state.activeConversationId === id ? updated[0]?.id ?? null : state.activeConversationId,
+        };
+      }),
+  });

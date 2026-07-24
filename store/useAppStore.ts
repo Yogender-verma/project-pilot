@@ -122,7 +122,7 @@ const INITIAL_ROADMAPS: Record<string, Roadmap> = {
   }
 };
 
-// Initial Chat Conversations
+// Initial Chat Conversations with explicit Markdown formatting and fenced code block
 const INITIAL_CONVERSATIONS: ChatConversation[] = [
   {
     id: 'conv-1',
@@ -132,7 +132,37 @@ const INITIAL_CONVERSATIONS: ChatConversation[] = [
       {
         id: 'msg-init-1',
         role: 'assistant',
-        content: 'Hello! I am your AI Career Mentor. Ask me anything about your recommended projects, how to fill skill gaps, structuring your github portfolio, or preparing for interviews with recruiters!',
+        content: `Hello! I am your **AI Career Mentor**. Ask me anything about your recommended projects, code implementations, or architectural guidelines!
+
+Here is an example of a custom React hook for handling data state:
+
+\`\`\`typescript
+import { useState, useEffect } from 'react';
+
+export function useFetch<T>(url: string) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch(url);
+        const json = await response.json();
+        setData(json);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [url]);
+
+  return { data, loading };
+}
+\`\`\`
+
+### Key Features
+1. **Generic Support:** Handles strongly-typed API responses.
+2. **State Management:** Automatically toggles loading indicators.`,
         timestamp: new Date()
       }
     ]
@@ -282,10 +312,9 @@ export interface AppStore
   resetOnboarding: () => void;
 
   // GitHub Analytics State
-githubAnalytics: GitHubAnalytics;
-connectGithub: (username: string) => Promise<void>;
-disconnectGithub: () => void;
-
+  githubAnalytics: GitHubAnalytics;
+  connectGithub: (username: string) => Promise<void>;
+  disconnectGithub: () => void;
 
   // Career Score State
   careerScore: CareerScore;
@@ -296,13 +325,13 @@ export const useAppStore = create<AppStore>()((set, get, api) => ({
   ...createOnboardingSlice(set, get, api),
   ...createAuthSlice(set, get, api),
   ...createProjectSlice(
-  MOCK_PROJECTS,
-  INITIAL_ROADMAPS
-)(set, get, api),
+    MOCK_PROJECTS,
+    INITIAL_ROADMAPS
+  )(set, get, api),
   ...createChatSlice(
-  INITIAL_CONVERSATIONS,
-  DEFAULT_USER
-)(set, get, api),
+    INITIAL_CONVERSATIONS,
+    DEFAULT_USER
+  )(set, get, api),
   ...createGithubSlice(MOCK_GITHUB)(set, get, api),
   ...createCareerSlice(MOCK_CAREER)(set, get, api),
 }));

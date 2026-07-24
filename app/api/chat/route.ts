@@ -1,3 +1,11 @@
+
+import { NextResponse } from 'next/server';
+
+export async function POST(req: Request) {
+  try {
+    const { messages } = await req.json();
+    const lastUserMessage = messages[messages.length - 1]?.content || '';
+
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText } from 'ai';
 
@@ -33,13 +41,18 @@ This runs in linear time and respects modular design! Let me know if you want me
       } else {
         mockText = `As your AI Career Mentor, let's break down this request: "${lastMessage}".
 
-Here are the modern best practices to implement this architecture:
-1. **Zustand Store**: Centralize state handlers to prevent redundant component re-renders.
-2. **Modular Services**: Separate data transformations into clean utilities.
-3. **Database Syncing**: Always execute server-side database sync asynchronously or inside transitions.
 
-Let me know if you would like a code snippet or a step-by-step roadmap for this feature!`;
-      }
+    const mockResponseBody = `Here is a modern implementation for your request: "${lastUserMessage}":
+
+\`\`\`typescript
+import { useState, useEffect } from 'react';
+
+5
+interface FetchState<T> {
+  data: T | null;
+  loading: boolean;
+  error: Error | null;
+}
 
       const textEncoder = new TextEncoder();
       const stream = new ReadableStream({
@@ -53,10 +66,44 @@ Let me know if you would like a code snippet or a step-by-step roadmap for this 
         },
       });
 
-      return new Response(stream, {
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
+
+export function useFetch<T>(url: string): FetchState<T> {
+  const [state, setState] = useState<FetchState<T>>({
+    data: null,
+    loading: true,
+    error: null,
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchData() {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(\`Error \${response.status}\`);
+        const json = await response.json();
+        if (isMounted) setState({ data: json, loading: false, error: null });
+      } catch (err) {
+        if (isMounted) setState({ data: null, loading: false, error: err as Error });
+      }
     }
+
+
+    fetchData();
+    return () => { isMounted = false; };
+  }, [url]);
+
+  return state;
+}
+\`\`\`
+
+### Key Implementation Details:
+1. **Generics (\`<T>\`):** Strongly types the API response.
+2. **Safe Unmounting:** Prevents React state update memory leaks using \`isMounted\`.
+`;
+
+    return new Response(mockResponseBody, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
 
     const google = createGoogleGenerativeAI({
       apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -135,10 +182,13 @@ Hiring Recommendation:`
       model: google('gemini-1.5-flash'),
       system: systemPrompt,
       messages: validMessages,
+
     });
 
-    return result.toTextStreamResponse();
   } catch (error) {
+
+    return NextResponse.json({ error: 'Failed to generate response' }, { status: 500 });
+
     console.error('Error in /api/chat:', error);
     return new Response(
       JSON.stringify({
@@ -149,5 +199,6 @@ Hiring Recommendation:`
         headers: { 'Content-Type': 'application/json' },
       }
     );
+
   }
 }

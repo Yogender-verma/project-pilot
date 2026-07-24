@@ -2,14 +2,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  MessageSquareCode, 
-  Send, 
-  Sparkles, 
-  Terminal, 
-  Trash2, 
-  Plus, 
-  Paperclip, 
+import {
+  MessageSquareCode,
+  Send,
+  Sparkles,
+  Terminal,
+  Trash2,
+  Plus,
+  Paperclip,
   CornerDownLeft,
   Copy,
   CheckCircle,
@@ -29,14 +29,15 @@ import { notify } from '@/lib/toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import MarkdownRenderer from '@/components/ai-mentor/MarkdownRenderer';
 
 export default function AiMentorChatPage() {
-  const { 
-    conversations, 
-    activeConversationId, 
-    sendMessage, 
-    createNewConversation, 
-    selectConversation, 
+  const {
+    conversations,
+    activeConversationId,
+    sendMessage,
+    createNewConversation,
+    selectConversation,
     deleteConversation,
     isReadingMode,
     activeReadingMessageId,
@@ -52,6 +53,22 @@ export default function AiMentorChatPage() {
   const [attachment, setAttachment] = useState<{ name: string; size: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Copy code snippet helper declared early to prevent reference errors during render
+  const handleCopyCode = async (code: string, msgId: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCodeIdx(msgId);
+      setTimeout(() => setCopiedCodeIdx(null), 1500);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
 
   // Voice input via Web Speech API
   const {
@@ -84,7 +101,7 @@ export default function AiMentorChatPage() {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeConv?.messages]);
 
-  // early return for distraction-free Reading Mode
+  // Early return for distraction-free Reading Mode
   if (isReadingMode && activeReadingMessageId) {
     const readingMsg = activeConv?.messages.find((m) => m.id === activeReadingMessageId);
     if (readingMsg) {
@@ -105,9 +122,9 @@ export default function AiMentorChatPage() {
                 <p className="text-[10px] text-slate-400">Distraction-free deep study mode</p>
               </div>
             </div>
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               size="sm"
               className="h-10 px-4 rounded-xl text-xs font-semibold cursor-pointer border-white/10 hover:border-indigo-500/30"
               onClick={() => setReadingMode(false, null)}
@@ -145,9 +162,9 @@ export default function AiMentorChatPage() {
                 </button>
               </div>
 
-              {/* Main long-form body content */}
-              <article className="max-w-none text-sm sm:text-base leading-relaxed text-slate-200 whitespace-pre-line tracking-wide">
-                {readingMsg.content}
+              {/* Main long-form body content rendered with Markdown */}
+              <article className="max-w-none text-sm sm:text-base leading-relaxed text-slate-200 tracking-wide">
+                <MarkdownRenderer content={readingMsg.content} />
               </article>
 
               {/* Attachments if any */}
@@ -209,8 +226,6 @@ export default function AiMentorChatPage() {
     }
   }
 
-
-
   // Handle typing input submit
   const handleSend = () => {
     const clean = inputMessage.trim();
@@ -221,7 +236,7 @@ export default function AiMentorChatPage() {
       undefined,
       attachment ? [{ name: attachment.name, size: attachment.size, type: 'file' }] : undefined
     );
-    
+
     setInputMessage('');
     setAttachment(null);
   };
@@ -245,13 +260,6 @@ export default function AiMentorChatPage() {
     }
   };
 
-  // Copy code snippet helper
-  const handleCopyCode = (code: string, msgId: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCodeIdx(msgId);
-    setTimeout(() => setCopiedCodeIdx(null), 1500);
-  };
-
   // Prompt suggestions
   const suggestedPrompts = [
     { label: 'How to build custom whiteboard curves?', value: 'How can I build a custom whiteboard drawing canvas with SVG lines?' },
@@ -268,9 +276,9 @@ export default function AiMentorChatPage() {
       {/* Left panel: Conversation History */}
       <div className="hidden md:flex flex-col w-64 border-r h-full" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--surface-secondary)' }}>
         <div className="p-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-          <Button 
-            variant="glow" 
-            className="w-full text-xs h-10" 
+          <Button
+            variant="glow"
+            className="w-full text-xs h-10"
             leftIcon={<Plus className="w-4 h-4" />}
             onClick={() => createNewConversation()}
           >
@@ -285,9 +293,8 @@ export default function AiMentorChatPage() {
             return (
               <div
                 key={c.id}
-                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer group text-xs font-semibold ${
-                  isActive ? 'bg-indigo-600/15 text-indigo-400' : 'hover:bg-indigo-500/5'
-                }`}
+                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer group text-xs font-semibold ${isActive ? 'bg-indigo-600/15 text-indigo-400' : 'hover:bg-indigo-500/5'
+                  }`}
                 style={!isActive ? { color: 'var(--text-secondary)' } : {}}
                 onClick={() => selectConversation(c.id)}
               >
@@ -312,7 +319,7 @@ export default function AiMentorChatPage() {
 
       {/* Right panel: Active chat window */}
       <div className="flex-1 flex flex-col justify-between h-full bg-gradient-to-b from-transparent to-[#0a0728]/10 relative">
-        <input 
+        <input
           type="file"
           ref={fileInputRef}
           onChange={handleFileUpload}
@@ -348,11 +355,10 @@ export default function AiMentorChatPage() {
               type="button"
               onClick={toggleRoastMode}
               title={isRoastMode ? "Disable Roast Mode" : "Enable AI Code Roast Mode"}
-              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold tracking-wider transition-all transform active:scale-95 border cursor-pointer ${
-                isRoastMode
-                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.3)] animate-pulse font-extrabold'
-                  : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-300'
-              }`}
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold tracking-wider transition-all transform active:scale-95 border cursor-pointer ${isRoastMode
+                ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.3)] animate-pulse font-extrabold'
+                : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-300'
+                }`}
             >
               <Flame className={`w-3.5 h-3.5 ${isRoastMode ? 'text-rose-400 animate-bounce' : ''}`} />
               <span>{isRoastMode ? 'ROAST MODE ON' : 'ROAST MODE'}</span>
@@ -361,11 +367,10 @@ export default function AiMentorChatPage() {
               type="button"
               onClick={toggleMockInterview}
               title={isMockInterview ? 'Disable Mock Interview' : 'Enable AI Mock Interview'}
-              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold tracking-wider transition-all transform active:scale-95 border cursor-pointer ${
-                isMockInterview
-                  ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-[0_0_15px_rgba(99,102,241,0.3)] animate-pulse font-extrabold'
-                  : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-300'
-              }`}
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold tracking-wider transition-all transform active:scale-95 border cursor-pointer ${isMockInterview
+                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-[0_0_15px_rgba(99,102,241,0.3)] animate-pulse font-extrabold'
+                : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-300'
+                }`}
             >
               <span>🎤</span>
               <span>{isMockInterview ? 'MOCK INTERVIEW ON' : 'MOCK INTERVIEW'}</span>
@@ -391,16 +396,16 @@ export default function AiMentorChatPage() {
             const difficulty = msg.content.match(/(?:Difficulty\s*:\s*|\b)(Easy|Medium|Hard)\b/i)?.[1] || 'Medium';
             const reportSections = isFinalReport
               ? ['Overall Score', 'Strengths', 'Weaknesses', 'Topics to Improve', 'Hiring Recommendation'].map((heading, index, headings) => {
-                  const nextHeading = headings[index + 1];
-                  const headingPattern = heading === 'Strengths' ? '(?:Technical\\s+)?Strengths' : heading;
-                  const nextHeadingPattern = nextHeading === 'Strengths' ? '(?:Technical\\s+)?Strengths' : nextHeading || '$';
-                  const pattern = new RegExp(`(?:^|\\n)\\s*(?:[-*]\\s*)?(?:##?\\s*)?${headingPattern}\\s*:?\\s*([\\s\\S]*?)(?=\\n\\s*(?:[-*]\\s*)?(?:##?\\s*)?${nextHeadingPattern}\\s*:?|$)`, 'i');
-                  return { heading, content: msg.content.match(pattern)?.[1]?.trim() || 'Not provided.' };
-                })
+                const nextHeading = headings[index + 1];
+                const headingPattern = heading === 'Strengths' ? '(?:Technical\\s+)?Strengths' : heading;
+                const nextHeadingPattern = nextHeading === 'Strengths' ? '(?:Technical\\s+)?Strengths' : nextHeading || '$';
+                const pattern = new RegExp(`(?:^|\\n)\\s*(?:[-*]\\s*)?(?:##?\\s*)?${headingPattern}\\s*:?\\s*([\\s\\S]*?)(?=\\n\\s*(?:[-*]\\s*)?(?:##?\\s*)?${nextHeadingPattern}\\s*:?|$)`, 'i');
+                return { heading, content: msg.content.match(pattern)?.[1]?.trim() || 'Not provided.' };
+              })
               : [];
-            
+
             return (
-              <div 
+              <div
                 key={msg.id}
                 className={`flex space-x-4 ${isUser ? 'justify-end' : 'justify-start'}`}
               >
@@ -412,12 +417,11 @@ export default function AiMentorChatPage() {
                 )}
 
                 {/* Message Bubble */}
-                <div className={`relative max-w-xl space-y-3.5 p-4 rounded-2xl text-xs sm:text-sm leading-relaxed ${
-                  isUser
-                    ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/20 rounded-tr-none'
-                    : 'border rounded-tl-none pr-10'
-                }`}
-                style={!isUser ? { backgroundColor: 'var(--hover-bg-strong)', borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' } : {}}
+                <div className={`relative max-w-xl space-y-3.5 p-4 rounded-2xl text-xs sm:text-sm leading-relaxed ${isUser
+                  ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/20 rounded-tr-none'
+                  : 'border rounded-tl-none pr-10'
+                  }`}
+                  style={!isUser ? { backgroundColor: 'var(--hover-bg-strong)', borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' } : {}}
                 >
                   {isInterviewQuestion && (
                     <div className="flex items-center justify-between gap-3 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-[10px] font-bold text-indigo-300">
@@ -434,24 +438,29 @@ export default function AiMentorChatPage() {
                       <Maximize2 className="w-3.5 h-3.5" />
                     </button>
                   )}
-                  
+
                   {/* Text content rendering */}
                   {isFinalReport ? (
                     <div className="space-y-2.5">
                       {reportSections.map((section) => (
                         <div key={section.heading} className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3">
                           <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">{section.heading}</p>
-                          <p className="mt-1 whitespace-pre-line">{section.content}</p>
+                          <div className="mt-1">
+                            <MarkdownRenderer content={section.content} />
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <>
-                      <p className="whitespace-pre-line">{msg.content}</p>
+                      {isUser ? (
+                        <p className="whitespace-pre-line">{msg.content}</p>
+                      ) : (
+                        <MarkdownRenderer content={msg.content} />
+                      )}
                       {score !== null && (
-                        <div className={`rounded-xl border p-3 text-center ${
-                          score >= 8 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : score >= 5 ? 'border-amber-500/30 bg-amber-500/10 text-amber-300' : 'border-rose-500/30 bg-rose-500/10 text-rose-300'
-                        }`}>
+                        <div className={`rounded-xl border p-3 text-center ${score >= 8 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : score >= 5 ? 'border-amber-500/30 bg-amber-500/10 text-amber-300' : 'border-rose-500/30 bg-rose-500/10 text-rose-300'
+                          }`}>
                           <p className="text-[10px] font-bold uppercase tracking-wider">⭐ Score</p>
                           <p className="mt-1 text-2xl font-extrabold">{score}/10</p>
                         </div>
@@ -541,7 +550,7 @@ export default function AiMentorChatPage() {
                   setInputMessage(p.value);
                   handleSend();
                 }}
-            className="px-3 py-2 border rounded-xl text-left text-[11px] text-indigo-400 font-semibold cursor-pointer max-w-sm transition-all"
+                className="px-3 py-2 border rounded-xl text-left text-[11px] text-indigo-400 font-semibold cursor-pointer max-w-sm transition-all"
                 style={{ backgroundColor: 'var(--hover-bg)', borderColor: 'var(--border-subtle)' }}
               >
                 ★ {p.label}
@@ -552,7 +561,7 @@ export default function AiMentorChatPage() {
 
         {/* Input box form container */}
         <div className="p-6 border-t shrink-0" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--surface-secondary)' }}>
-          
+
           {/* File attachment preview */}
           {attachment && (
             <div className="flex items-center space-x-2.5 p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-xs w-fit mb-3">
@@ -583,7 +592,7 @@ export default function AiMentorChatPage() {
                 color: 'var(--text-primary)',
               }}
             />
-            
+
             {/* Input Action tools (File attach, Mic, & Send button) */}
             <div className="absolute right-4.5 bottom-4 flex items-center space-x-2">
               <button
@@ -596,17 +605,16 @@ export default function AiMentorChatPage() {
                 <Paperclip className="w-4 h-4" aria-hidden="true" />
               </button>
 
-              {speechSupported && (
+              {isMounted && speechSupported && (
                 <button
                   type="button"
                   onClick={isListening ? stopListening : startListening}
                   aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
                   title={isListening ? 'Stop listening' : 'Speak your message'}
-                  className={`relative p-2 rounded-xl border transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                    isListening
-                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
-                      : 'border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
-                  }`}
+                  className={`relative p-2 rounded-xl border transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${isListening
+                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+                    : 'border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
+                    }`}
                 >
                   {isListening ? (
                     <MicOff className="w-4 h-4" aria-hidden="true" />
