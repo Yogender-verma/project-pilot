@@ -33,21 +33,26 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import type { Theme } from '@/lib/ThemeProvider';
+import { useRouter } from 'next/navigation';
+import { useClerk } from '@clerk/nextjs';
 import { useAppStore } from '@/store/useAppStore';
 import { useTheme } from '@/lib/ThemeProvider';
 import { 
   getProfessionalLinks, 
   updateProfessionalLinks, 
   updateUserSkillsInDb, 
-  updateProfileAvatar 
-} from '@/app/actions/user';
-import { extractSkillsFromResume } from '@/app/actions/extractSkills';
+  updateProfileAvatar,
+  softDeleteAccount
+} from '@/app/actions/user';import { extractSkillsFromResume } from '@/app/actions/extractSkills';
 import { toast } from 'sonner'; 
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const { signOut } = useClerk();
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const { 
-    user, 
-    onboardingData, 
+    user,    onboardingData, 
     updateProfile, 
     updateAvatar, 
     updatePortfolioVisibility, 
@@ -299,12 +304,31 @@ export default function SettingsPage() {
     }
   };
 
-  // Reset Onboarding pathway
+// Reset Onboarding pathway
   const handleResetOnboarding = () => {
     resetOnboarding();
     toast.success("Onboarding reset successfully.");
   };
 
+  // Soft-delete account — flags the record instead of wiping it,
+  // giving the user 30 days to log back in and recover it.
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete your account? You'll have 30 days to log back in and restore it before it's permanently erased."
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await softDeleteAccount();
+      toast.success("Account scheduled for deletion. Log back in within 30 days to restore it.");
+      await signOut({ redirectUrl: "/" });
+    } catch (error) {
+      console.error("Failed to delete account:", error);
+      toast.error("Something went wrong while deleting your account.");
+      setIsDeleting(false);
+    }
+  };
   const [gitUsername, setGitUsername] = useState(githubAnalytics.username || '');
   const [gitLoading, setGitLoading] = useState(false);
 
@@ -981,15 +1005,16 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Delete Account */}
+{/* Delete Account */}
               <Button
                 variant="outline"
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
                 className="w-full h-11 border-rose-500/20 hover:bg-rose-500/10 text-rose-400 hover:text-white text-xs font-semibold"
-                leftIcon={<Trash2 className="w-4 h-4 shrink-0" />}
+                leftIcon={isDeleting ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Trash2 className="w-4 h-4 shrink-0" />}
               >
-                Delete Account & Cockpit
+                {isDeleting ? "Deleting..." : "Delete Account & Cockpit"}
               </Button>
-
             </CardContent>
           </Card>
 

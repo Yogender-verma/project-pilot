@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
-import { getCurrentUserProfile } from '@/app/actions/user';
+import { usePathname, useRouter } from 'next/navigation';
+import { useUser, useClerk } from '@clerk/nextjs';import { getCurrentUserProfile } from '@/app/actions/user';
 import { CommandPalette } from '@/components/dashboard/CommandPalette';
-import { MobileDrawer } from '@/components/layout/MobileDrawer';
+import { AccountRecoveryPrompt } from '@/components/dashboard/AccountRecoveryPrompt';import { MobileDrawer } from '@/components/layout/MobileDrawer';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -29,14 +28,15 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const { careerScore, projects, selectProject, syncUserProfile, isReadingMode } = useAppStore();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+const pathname = usePathname();
+  const router = useRouter();
+  const { signOut } = useClerk();
+  const { careerScore, projects, selectProject, syncUserProfile, isReadingMode } = useAppStore();  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [mounted, setMounted] = useState(false);
-  const [pageSearchQuery, setPageSearchQuery] = useState('');
+const [mounted, setMounted] = useState(false);
+  const [deletedAccountInfo, setDeletedAccountInfo] = useState<{ daysRemaining: number } | null>(null);  const [pageSearchQuery, setPageSearchQuery] = useState('');
   const [hasNoMatches, setHasNoMatches] = useState(false);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -56,11 +56,20 @@ export default function DashboardLayout({
     if (!clerkLoaded) return;
 
     const hydrateUser = async () => {
-      try {
+try {
         const dbProfile = await getCurrentUserProfile();
 
-        // Build Clerk identity fields — always real, always available once loaded
-        const clerkIdentity = clerkUser
+        // If this account was soft-deleted, show the recovery prompt instead
+        // of hydrating the dashboard — the user must choose to restore or not.
+        if (dbProfile?.deletedAt) {
+          const deletedAt = new Date(dbProfile.deletedAt);
+          const daysSince = (Date.now() - deletedAt.getTime()) / (1000 * 60 * 60 * 24);
+          const daysRemaining = Math.max(0, Math.ceil(30 - daysSince));
+          setDeletedAccountInfo({ daysRemaining });
+          return;
+        }
+
+        // Build Clerk identity fields — always real, always available once loaded        const clerkIdentity = clerkUser
           ? {
               fullName:
                 clerkUser.fullName ||
@@ -246,9 +255,22 @@ export default function DashboardLayout({
         backgroundColor: 'var(--background)',
         color: 'var(--foreground)',
       }}
-    >
-      {/* Dynamic Background glowing canvas */}
-      <div className='absolute top-[20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-indigo-600/5 blur-[120px] pointer-events-none' />
+>
+      {/* Soft-deleted account recovery prompt — blocks the dashboard until resolved */}
+      {deletedAccountInfo && (
+        <AccountRecoveryPrompt
+          daysRemaining={deletedAccountInfo.daysRemaining}
+          onRestored={() => {
+            setDeletedAccountInfo(null);
+            window.location.reload();
+          }}
+          onDismiss={async () => {
+            await signOut({ redirectUrl: '/' });
+          }}
+        />
+      )}
+
+      {/* Dynamic Background glowing canvas */}      <div className='absolute top-[20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-indigo-600/5 blur-[120px] pointer-events-none' />
       <div className='absolute bottom-[20%] left-[-10%] w-[400px] h-[400px] rounded-full bg-purple-600/5 blur-[120px] pointer-events-none' />
 
       {/* Desktop Sidebar (Left Panel) */}
