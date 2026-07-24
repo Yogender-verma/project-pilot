@@ -43,7 +43,7 @@ export const createProjectSlice = (
   selectProject: (id) => set({ selectedProjectId: id }),
 
   addCustomProject: (newProject) =>
-    set((state) => {
+    set((state: ProjectSlice) => {
       const updatedProjects = [newProject, ...state.projects];
 
       saveProjectToDb({
@@ -180,7 +180,7 @@ export const createProjectSlice = (
   toggleTaskCompletion: () => set(() => ({})),
 
   initializeRoadmap: (projectId, title) =>
-    set((state) => {
+    set((state: ProjectSlice) => {
       if (state.roadmaps[projectId]) return {};
 
       const newSteps = [
@@ -256,7 +256,7 @@ export const createProjectSlice = (
         },
       ];
 
-      const projectData = state.projects.find((p) => p.id === projectId);
+      const projectData = state.projects.find((p: Project) => p.id === projectId);
 
       if (projectData) {
         saveProjectToDb({

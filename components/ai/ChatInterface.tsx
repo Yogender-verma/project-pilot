@@ -1,13 +1,27 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/Button';
 import { Send, Sparkles } from 'lucide-react';
 
 export default function ChatInterface() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat();
+  const { messages, status, sendMessage } = useChat();
+  const [input, setInput] = React.useState('');
+  const isLoading = status !== 'ready' && status !== 'error';
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+    sendMessage({ content: input, role: 'user' } as any);
+    setInput('');
+  };
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom as new text streams in
@@ -19,7 +33,7 @@ export default function ChatInterface() {
     <div className="flex flex-col h-full bg-[#070514] text-slate-100 p-6 rounded-2xl border border-white/15">
       {/* Messages container */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-        {messages.map((m) => (
+        {messages.map((m: any) => (
           <div
             key={m.id}
             className={`flex flex-col space-y-1.5 p-4 rounded-xl text-xs sm:text-sm ${
