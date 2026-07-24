@@ -8,8 +8,6 @@ assignees: ""
 
 # ✨ Feature Request
 
-Thank you for your idea! We'd love to hear how the project can be improved.
-
 ---
 
 ## 📝 Description

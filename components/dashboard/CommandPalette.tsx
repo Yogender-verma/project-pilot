@@ -168,17 +168,6 @@ export function CommandPalette({
     );
   }, [projectItems, query]);
 
-  React.useEffect(() => {
-    const handleGlobalShortcut = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        onOpenChange(!open);
-      }
-    };
-
-    window.addEventListener('keydown', handleGlobalShortcut);
-    return () => window.removeEventListener('keydown', handleGlobalShortcut);
-  }, [onOpenChange, open]);
 
   React.useEffect(() => {
     if (!open) {
