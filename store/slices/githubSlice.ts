@@ -1,5 +1,6 @@
 import { StateCreator } from "zustand";
 import { GitHubAnalytics } from "@/types";
+import { fetchGithubOauthAnalytics } from "@/app/actions/githubActions";
 
 export interface GithubSlice {
   githubAnalytics: GitHubAnalytics;
@@ -15,6 +16,25 @@ export const createGithubSlice =
 
     connectGithub: async (username) => {
       try {
+        // Try OAuth first
+        const oauthRes = await fetchGithubOauthAnalytics();
+        
+        if (oauthRes.success && oauthRes.data) {
+          const { data } = oauthRes;
+          set((state) => ({
+            githubAnalytics: {
+              ...state.githubAnalytics,
+              username: data.username,
+              totalRepos: data.repositories,
+              totalCommits: data.contributions,
+              portfolioStrengthScore: data.overallScore,
+              connected: true,
+            },
+          }));
+          return;
+        }
+
+        // Fallback to public API
         const res = await fetch(
           `https://api.github.com/users/${username}/repos?per_page=30&sort=updated`
         );
