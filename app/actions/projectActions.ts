@@ -14,6 +14,14 @@ export interface ProjectPayload {
   roadmap?: any;
 }
 
+export interface ProjectQueryOptions {
+  search?: string;
+  tags?: string | string[];
+  status?: string;
+  skip?: number;
+  take?: number;
+}
+
 /**
  * Helper to get the current authenticated Clerk ID or fallback mock developer ID.
  */
@@ -30,38 +38,108 @@ async function getAuthenticatedUserId(): Promise<string> {
   if (!userId) {
     throw new Error('Unauthenticated user attempt.');
   }
-
   return userId;
 }
 
 /**
- * Fetches all projects associated with the current user with pagination support.
+ * Normalizes the current and legacy getUserProjects arguments.
+ *
+ * The legacy `(take, skip)` signature is intentionally retained so existing
+ * callers do not need to change when search/filtering is introduced.
  */
-export async function getUserProjects(take?: number, skip?: number) {
+function normalizeProjectQuery(
+  optionsOrTake?: ProjectQueryOptions | number,
+  legacySkip?: number
+): Required<Pick<ProjectQueryOptions, 'skip' | 'take'>> &
+  Omit<ProjectQueryOptions, 'skip' | 'take'> {
+  if (typeof optionsOrTake === 'number') {
+    return {
+      search: undefined,
+      tags: undefined,
+      status: undefined,
+      skip: Math.max(0, legacySkip ?? 0),
+      take: Math.min(100, Math.max(1, optionsOrTake)),
+    };
+  }
+
+  const options = optionsOrTake ?? {};
+  const search = options.search?.trim();
+  const status = options.status?.trim();
+
+  const tags = Array.isArray(options.tags)
+    ? options.tags.map((tag) => tag.trim()).filter(Boolean)
+    : options.tags
+      ?.split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+
+  return {
+    search: search || undefined,
+    tags: tags?.length ? tags : undefined,
+    status: status || undefined,
+    skip: Math.max(0, options.skip ?? 0),
+    take: Math.min(100, Math.max(1, options.take ?? 20)),
+  };
+}
+
+/**
+ * Fetches projects associated with the current user.
+ *
+ * Supports title search, tag filtering, status filtering, and pagination.
+ * Queries remain scoped to the authenticated user's database record.
+ *
+ * The legacy `(take, skip)` call signature is still supported.
+ */
+export async function getUserProjects(
+  optionsOrTake?: ProjectQueryOptions | number,
+  legacySkip?: number
+) {
   try {
     const clerkId = await getAuthenticatedUserId();
-    
-    // First, find the user database ID using the Clerk ID
+    const { search, tags, status, skip, take } = normalizeProjectQuery(
+      optionsOrTake,
+      legacySkip
+    );
+
+    // First, find the user database ID using the Clerk ID.
     const dbUser = await prisma.user.findUnique({
       where: { clerkId },
       include: {
         projects: {
-          where: { deletedAt: null },
-          ...(take !== undefined ? { take } : {}),
-          ...(skip !== undefined ? { skip } : {}),
+          where: {
+            deletedAt: null,
+            ...(search
+              ? {
+                  title: {
+                    contains: search,
+                    mode: 'insensitive',
+                  },
+                }
+              : {}),
+            ...(tags
+              ? {
+                  tags: {
+                    hasSome: tags,
+                  },
+                }
+              : {}),
+            ...(status ? { status } : {}),
+          },
+          take,
+          skip,
           include: {
             activities: {
-              orderBy: { createdAt: 'desc' }
+              orderBy: { createdAt: 'desc' },
             },
             milestones: {
               orderBy: {
-                dueDate: 'asc'
-              }
-            }
+                dueDate: 'asc',
+              },
+            },
+          },
+          orderBy: { updatedAt: 'desc' },
         },
-          orderBy: { updatedAt: 'desc' }
-        }
-      }
+      },
     });
 
     return dbUser?.projects || [];
@@ -70,7 +148,6 @@ export async function getUserProjects(take?: number, skip?: number) {
     return [];
   }
 }
-
 
 /**
  * Returns a project only when it belongs to the currently authenticated user.
@@ -81,7 +158,6 @@ export async function getOwnedProjectForExport(projectId: string) {
     if (!projectId?.trim()) {
       return { success: false as const, error: 'A valid project ID is required.' };
     }
-
     const clerkId = await getAuthenticatedUserId();
     const project = await prisma.project.findFirst({
       where: {
@@ -100,14 +176,12 @@ export async function getOwnedProjectForExport(projectId: string) {
         updatedAt: true,
       },
     });
-
     if (!project) {
       return {
         success: false as const,
         error: 'Project not found in your account. Initialize or save it before exporting.',
       };
     }
-
     return {
       success: true as const,
       project: {
@@ -133,13 +207,12 @@ export async function saveProjectToDb(data: ProjectPayload) {
     const clerkId = await getAuthenticatedUserId();
 
     const dbUser = await prisma.user.findUnique({
-      where: { clerkId }
+      where: { clerkId },
     });
 
     if (!dbUser) {
       return { success: false, errorType: 'AUTH', message: 'User record not found in database.' };
     }
-
     const savedProject = await prisma.project.upsert({
       where: { id: data.id },
       update: {
@@ -161,7 +234,6 @@ export async function saveProjectToDb(data: ProjectPayload) {
         userId: dbUser.id,
       },
     });
-
     if (savedProject.progress >= 100 || savedProject.status.toLowerCase() === 'completed') {
       await createUserNotification(clerkId, {
         title: 'Project completed',
@@ -172,11 +244,10 @@ export async function saveProjectToDb(data: ProjectPayload) {
         projectId: savedProject.id,
       });
     }
-
     return { success: true, project: savedProject };
   } catch (error: any) {
     console.error('Failed to save project details to database:', error);
-    
+
     if (process.env.NODE_ENV === 'development') {
       console.warn('Postgres offline. Bypassing saveProjectToDb in offline-mode.');
       return {
@@ -191,10 +262,9 @@ export async function saveProjectToDb(data: ProjectPayload) {
           roadmap: data.roadmap,
           createdAt: new Date(),
           updatedAt: new Date(),
-        }
+        },
       };
     }
-
     let errorType = 'UNKNOWN';
     if (error.message?.includes('Unauthenticated')) {
       errorType = 'AUTH';
@@ -211,27 +281,30 @@ export async function saveProjectToDb(data: ProjectPayload) {
 /**
  * Updates step completion state in a project's roadmap and logs an activity.
  */
-export async function toggleProjectMilestoneInDb(projectId: string, stepId: string, steps: any[], progress: number) {
+export async function toggleProjectMilestoneInDb(
+  projectId: string,
+  stepId: string,
+  steps: any[],
+  progress: number
+) {
   try {
     const clerkId = await getAuthenticatedUserId();
 
     const dbUser = await prisma.user.findUnique({
-      where: { clerkId }
+      where: { clerkId },
     });
 
     if (!dbUser) {
       throw new Error('User record not found.');
     }
-
     const updatedProject = await prisma.project.update({
       where: { id: projectId },
       data: {
         roadmap: steps,
         progress,
         status: progress === 100 ? 'Completed' : 'In Progress',
-      }
+      },
     });
-
     const completedStep = steps.find((step) => step.id === stepId && step.completed);
     if (completedStep) {
       await createUserNotification(clerkId, {
@@ -243,7 +316,6 @@ export async function toggleProjectMilestoneInDb(projectId: string, stepId: stri
         projectId,
       });
     }
-
     if (progress === 100) {
       await createUserNotification(clerkId, {
         title: 'Project completed',
@@ -258,7 +330,6 @@ export async function toggleProjectMilestoneInDb(projectId: string, stepId: stri
     return updatedProject;
   } catch (error) {
     console.error('Failed to update project milestone in database:', error);
-
     if (process.env.NODE_ENV === 'development') {
       console.warn('Postgres offline. Bypassing toggleProjectMilestoneInDb in offline-mode.');
       return null;
@@ -273,9 +344,8 @@ export async function toggleProjectMilestoneInDb(projectId: string, stepId: stri
 export async function reorderProjectMilestonesInDb(projectId: string, steps: any[]) {
   try {
     const clerkId = await getAuthenticatedUserId();
-
     const dbUser = await prisma.user.findUnique({
-      where: { clerkId }
+      where: { clerkId },
     });
 
     if (!dbUser) {
@@ -284,13 +354,12 @@ export async function reorderProjectMilestonesInDb(projectId: string, steps: any
 
     await prisma.project.update({
       where: { id: projectId },
-      data: { roadmap: steps }
+      data: { roadmap: steps },
     });
 
     return { success: true as const };
   } catch (error) {
     console.error('Failed to reorder project milestones in database:', error);
-
     if (process.env.NODE_ENV === 'development') {
       console.warn('Postgres offline. Bypassing reorderProjectMilestonesInDb in offline-mode.');
       return { success: false as const };
@@ -302,12 +371,15 @@ export async function reorderProjectMilestonesInDb(projectId: string, steps: any
 /**
  * Logs a new activity entry in the database.
  */
-export async function createActivityInDb(projectId: string, description: string, type: string = 'milestone') {
+export async function createActivityInDb(
+  projectId: string,
+  description: string,
+  type: string = 'milestone'
+) {
   try {
     const clerkId = await getAuthenticatedUserId();
-
     const dbUser = await prisma.user.findUnique({
-      where: { clerkId }
+      where: { clerkId },
     });
 
     if (!dbUser) {
@@ -320,11 +392,10 @@ export async function createActivityInDb(projectId: string, description: string,
         description,
         projectId,
         userId: dbUser.id,
-      }
+      },
     });
   } catch (error) {
     console.error('Failed to create activity log in database:', error);
-
     if (process.env.NODE_ENV === 'development') {
       console.warn('Postgres offline. Bypassing createActivityInDb in offline-mode.');
       return null;
@@ -341,9 +412,11 @@ export async function createActivityInDb(projectId: string, description: string,
 export async function getProjectActivities(projectId?: string, limit: number = 30) {
   try {
     const clerkId = await getAuthenticatedUserId();
-    const dbUser = await prisma.user.findUnique({ where: { clerkId }, select: { id: true } });
+    const dbUser = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { id: true },
+    });
     if (!dbUser) return [];
-
     return await prisma.activity.findMany({
       where: {
         userId: dbUser.id,
@@ -375,10 +448,7 @@ export async function createMilestone(
   });
 }
 
-export async function updateMilestoneStatus(
-  milestoneId: string,
-  status: string
-) {
+export async function updateMilestoneStatus(milestoneId: string, status: string) {
   return prisma.milestone.update({
     where: {
       id: milestoneId,
@@ -389,9 +459,7 @@ export async function updateMilestoneStatus(
   });
 }
 
-export async function deleteMilestone(
-  milestoneId: string
-) {
+export async function deleteMilestone(milestoneId: string) {
   return prisma.milestone.delete({
     where: {
       id: milestoneId,
@@ -403,19 +471,18 @@ export async function deleteProject(projectId: string) {
   try {
     const clerkId = await getAuthenticatedUserId();
     const dbUser = await prisma.user.findUnique({
-      where: { clerkId }
+      where: { clerkId },
     });
 
     if (!dbUser) {
       return { success: false, errorType: 'AUTH', message: 'User record not found.' };
     }
-
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
         userId: dbUser.id,
         deletedAt: null,
-      }
+      },
     });
 
     if (!project) {
@@ -426,7 +493,6 @@ export async function deleteProject(projectId: string) {
       where: { id: projectId },
       data: { deletedAt: new Date() },
     });
-
     return { success: true, project: updated };
   } catch (error: any) {
     console.error('Failed to soft delete project:', error);
